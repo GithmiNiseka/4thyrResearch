@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { SafeAreaView, View, ScrollView, Image, Text, StyleSheet, Animated, TouchableOpacity } from "react-native";
+import { useNavigation } from "@react-navigation/native"; 
 import Colors from "../constants/Colors";
 import FontSize from "../constants/FontSize";
 
@@ -10,6 +11,9 @@ export default function RecordStartingPage() {
 			.fill(0)
 			.map(() => new Animated.Value(0))
 	).current;
+
+	// Navigation hook
+	const navigation = useNavigation();
 
 	// State for time tracking
 	const [seconds, setSeconds] = useState(0);
@@ -78,6 +82,11 @@ export default function RecordStartingPage() {
 		setIsPaused(!isPaused); // Toggle icon
 	};
 
+	// Function to handle cancel button click
+	const handleCancel = () => {
+		navigation.goBack(); // Navigate back to the previous page
+	};
+
 	return (
 		<SafeAreaView style={styles.container}>
 			<ScrollView style={styles.scrollView}>
@@ -98,7 +107,7 @@ export default function RecordStartingPage() {
 						<Image
 							source={require("../assets/images/line.png")}
 							resizeMode="stretch"
-							style={{ width: "100%", height: 3,position:'relative',top:25, }}
+							style={{ width: "100%", height: 3, position: "relative", top: 25 }}
 						/>
 					) : (
 						// Render animated wavy boxes when running
@@ -128,11 +137,13 @@ export default function RecordStartingPage() {
 
 			{/* Recording controls: Cancel, Record, Pause/Play, Done */}
 			<View style={styles.controlsContainer}>
-				<Image
-					source={require("../assets/images/cancel.png")}
-					resizeMode="stretch"
-					style={{ width: 42, height: 42, marginLeft: 15 }}
-				/>
+				<TouchableOpacity onPress={handleCancel}>
+					<Image
+						source={require("../assets/images/cancel.png")}
+						resizeMode="stretch"
+						style={{ width: 42, height: 42, marginLeft: 15 }}
+					/>
+				</TouchableOpacity>
 				<View style={styles.box10}></View>
 				<Image
 					source={require("../assets/images/RecordingIcon.png")}
