@@ -1,66 +1,50 @@
 import React from "react";
-import { SafeAreaView, ScrollView, View, Text, Image, TouchableOpacity } from "react-native";
+import { SafeAreaView, ScrollView, View, Text, ImageBackground, Image ,StyleSheet,TouchableOpacity} from "react-native";
 import Colors from "../constants/Colors";
 import FontSize from "../constants/FontSize";
+import { useNavigation, NavigationProp } from "@react-navigation/native";
+
+export type RootStackParamList = {
+	IndexPage: undefined;
+	RecordingPage: undefined;
+	RecordStartingPage: undefined;
+  };
 
 export default function RecordingPage() {
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.surfaceContainerLowest }}>
-      <ScrollView style={{ flex: 1, backgroundColor: Colors.surfaceContainerLowest, paddingTop: 17 }}>
-      
-        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 17, marginHorizontal: 14 }}>
-          <Image
-            source={require("../assets/images/logo.png")} // Replace with your actual logo
-            resizeMode="stretch"
-            style={{ width: 32, height: 26, marginRight: 14 }}
-          />
-          <Text style={{ color: Colors.shadow, fontSize: FontSize.body_small, flex: 1 }}>
-            {"Signify"}
-          </Text>
-        </View>
+	const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
-        <View
-          style={{
-            height: 1,
-            backgroundColor: "#C0C0C0",
-            marginBottom: 300,
-            marginHorizontal: 12,
-          }}
-        />
+	// Function to navigate to RecordingPage
+	const goToRecordStartingPage = () => {
+	  navigation.navigate("RecordStartingPage");
+	};
 
-        {/* Centered Content Section */}
-        <View
-          style={{
-            justifyContent: "center",
-            alignItems: "center",
-            marginBottom: 18,
-            marginHorizontal: 55,
-          }}
-        >
-          {/* Microphone Icon */}
-          <TouchableOpacity>
-            <View>
-              <Image
-                source={require("../assets/images/recordingCircle.png")} // Replace with your microphone icon
-                resizeMode="contain"
-                style={{ width: 100, height: 100 }}
-              />
-            </View>
-          </TouchableOpacity>
+	return (
+		<SafeAreaView style={{ flex: 1, backgroundColor: Colors.surfaceContainerLowest }}>
+			<ScrollView style={{ flex: 1, paddingTop: 17 }}>
+				<View style={{ flexDirection: "row", alignItems: "center", marginBottom: 17, marginHorizontal: 26 }}>
+				<Image
+                 source={require("../assets/images/logo.png")}
+                 resizeMode="stretch"
+                 style={{ width: 32, height: 26, marginRight: 14 }}
+                 />
+				<Text style={{ color: Colors.shadow, fontSize: FontSize.body_small, flex: 1 }}>{"Signify"}</Text>
+				</View>
 
-          {/* Instruction Text */}
-          <Text
-            style={{
-              color: Colors.shadow,
-              fontSize: FontSize.body_large,
-              fontWeight: "bold",
-              textAlign: "center",
-            }}
-          >
-            {"පටිගත කිරීම ආරම්භ කිරීමට මයික්‍රෆෝනය තට්ටු කරන්න"}
-          </Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
+				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center',paddingTop: 250, }} >
+				<TouchableOpacity onPress={goToRecordStartingPage}>
+				<Image
+                 source={require("../assets/images/recordingCircle.png")}
+                 resizeMode="stretch"
+                 style={{ width: 80, height: 80, marginRight: 14 }}
+                 />
+				</TouchableOpacity>
+			    </View>
+				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center',paddingTop: 20, }} >
+				<Text style={{ color: Colors.shadow, fontSize: FontSize.body_large, marginLeft: 17,fontWeight: "bold", }} >
+					{"පටිගත කිරීම ආරම්භ කිරීමට මයික්‍රෆෝනය තට්ටු කරන්න"}
+				</Text>
+				</View>
+			</ScrollView>
+		</SafeAreaView>
+	);
 }
