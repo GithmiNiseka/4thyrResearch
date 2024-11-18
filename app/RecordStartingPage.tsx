@@ -53,28 +53,30 @@ export default function RecordStartingPage() {
 
 	// Timer effect to update the time
 	useEffect(() => {
-		let interval = null;
+		let interval: NodeJS.Timeout | null = null; 
+		
 		if (isRunning) {
-			interval = setInterval(() => {
-				setSeconds((prevSeconds) => {
-					if (prevSeconds === 59) {
-						setMinutes((prevMinutes) => {
-							if (prevMinutes === 59) {
-								setHours((prevHours) => prevHours + 1);
-								return 0;
-							}
-							return prevMinutes + 1;
-						});
-						return 0;
-					}
-					return prevSeconds + 1;
+		  interval = setInterval(() => {
+			setSeconds((prevSeconds) => {
+			  if (prevSeconds === 59) {
+				setMinutes((prevMinutes) => {
+				  if (prevMinutes === 59) {
+					setHours((prevHours) => prevHours + 1);
+					return 0;
+				  }
+				  return prevMinutes + 1;
 				});
-			}, 1000);
+				return 0;
+			  }
+			  return prevSeconds + 1;
+			});
+		  }, 1000);
 		} else if (!isRunning && interval !== null) {
-			clearInterval(interval);
+		  clearInterval(interval);
 		}
-		return () => clearInterval(interval);
-	}, [isRunning]);
+	  
+		return () => clearInterval(interval as NodeJS.Timeout); 
+	  }, [isRunning]);
 
 	// Function to handle play/pause button click
 	const togglePausePlay = () => {
