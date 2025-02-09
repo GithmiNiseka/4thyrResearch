@@ -3,6 +3,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import IndexPage from "./app/index";
 import RecordingPage from "./app/RecordingPage";
+import QuestionsPage from "./app/QuestionsPage";
 
 const Stack = createNativeStackNavigator();
 
@@ -20,6 +21,7 @@ export default function App() {
           component={RecordingPage}
           options={{ title: "Recording" }} // Optional: Set the title of the screen
         />
+         <Stack.Screen name="QuestionsPage" component={QuestionsPage} />
       </Stack.Navigator>
     </NavigationContainer>
   );

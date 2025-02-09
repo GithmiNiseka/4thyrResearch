@@ -1,38 +1,48 @@
+// QuestionsPage.tsx
 import React from "react";
-import { View, Text, StyleSheet, SafeAreaView } from "react-native";
+import { SafeAreaView, View, Text, StyleSheet } from "react-native";
+import { useRoute } from "@react-navigation/native";
+import { RouteProp } from "@react-navigation/native";
 
-interface QuestionPageProps {
-  route: {
-    params: {
-      transcription: string;
-    };
-  };
-}
+// Define the type for the route params
+type RootStackParamList = {
+  RecordStartingPage: undefined;
+  QuestionsPage: { sampleText: string }; // Define sampleText as a string in route params
+};
 
-const QuestionPage: React.FC<QuestionPageProps> = ({ route }) => {
-  const { transcription } = route.params;
+export default function QuestionsPage() {
+  // Use the useRoute hook with the correct type for route params
+  const route = useRoute<RouteProp<RootStackParamList, "QuestionsPage">>();
+  const { sampleText } = route.params; // Now sampleText is properly typed
 
   return (
     <SafeAreaView style={styles.container}>
-      <View>
-        <Text style={styles.text}>{transcription}</Text>
+      <View style={styles.content}>
+        <Text style={styles.text}>{sampleText}</Text>
       </View>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#FFF",
-  },
-  text: {
-    fontSize: 16,
-    color: "#000",
+    backgroundColor: "#fff",
     padding: 20,
   },
+  content: {
+    justifyContent: "center",
+    alignItems: "center",
+    flex: 1,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 20,
+  },
+  text: {
+    fontSize: 18,
+    color: "#333",
+    textAlign: "center",
+  },
 });
-
-export default QuestionPage;
