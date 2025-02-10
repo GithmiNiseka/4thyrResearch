@@ -31,7 +31,7 @@ export default function RecordStartingPage() {
   const [isPaused, setIsPaused] = useState(false); // Initially on pause icon
 
   // New state for recorded text (mock text for this example)
-  const [sampleText, setSampleText] = useState("This is a sample recorded text.");
+  const [sampleText, setSampleText] = useState("ඔයාට අසාධ්‍යමීකතා තිබෙනවාද?");
 
   useEffect(() => {
     // Function to animate the height of each box
