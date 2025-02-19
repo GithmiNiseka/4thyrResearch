@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, Platform } from "react-native";
+import { SafeAreaView, ScrollView, Image, View, Text, TouchableOpacity, Platform } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import Colors from "./constants/Colors";
+import FontSize from "./constants/FontSize";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStackParamList } from "../App";  // 👈 Import the defined types
+import { RootStackParamList } from "../App";  
 import io from "socket.io-client";
 
 let Voice: any;
@@ -10,13 +12,13 @@ if (Platform.OS !== "web") {
   Voice = require("@react-native-community/voice").default;
 }
 
-// ✅ Type for navigation prop
+// Type for navigation prop
 type NavigationProp = StackNavigationProp<RootStackParamList, "RecordStartingPage">;
 
 const socket = io("http://192.168.43.214:5000");
 
 export default function RecordStartingPage() {
-  const navigation = useNavigation<NavigationProp>();  // ✅ Correctly typed navigation
+  const navigation = useNavigation<NavigationProp>();  
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState("");
 
@@ -65,12 +67,23 @@ export default function RecordStartingPage() {
   };
 
   return (
-    
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.surfaceContainerLowest }}>
+        <ScrollView style={{ flex: 1, paddingTop: 17 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 17, marginHorizontal: 26 }}>
+              <Image
+                    source={require("./assets/images/logo.png")}
+                    resizeMode="stretch"
+                    style={{ width: 32, height: 26, marginRight: 14 }}
+              />
+              <Text style={{ color: Colors.shadow, fontSize: FontSize.body_small, flex: 1 }}>{"Signify"}</Text>
+          </View>
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
       <TouchableOpacity onPress={isRecording ? stopRecording : startRecording} style={{ padding: 20, backgroundColor: "blue" }}>
         <Text style={{ color: "white" }}>{isRecording ? "Stop Recording" : "Start Recording"}</Text>
       </TouchableOpacity>
       <Text>{transcript}</Text>
     </View>
+    </ScrollView>
+    </SafeAreaView>
   );
 }

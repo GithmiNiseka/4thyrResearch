@@ -3,10 +3,10 @@ import { NavigationContainer } from "@react-navigation/native";
 import RecordStartingPage from "./app/RecordStartingPage";
 import QuestionsPage from "./app/QuestionsPage";
 
-// ✅ Define types for routes and their params
+// Define types for routes and their params
 export type RootStackParamList = {
   RecordStartingPage: undefined;
-  QuestionsPage: { sampleText: string };  // 👈 Define param for QuestionsPage
+  QuestionsPage: { sampleText: string };  
 };
 
 const Stack = createStackNavigator<RootStackParamList>();

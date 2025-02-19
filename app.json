@@ -4,7 +4,6 @@
     "slug": "deafapp",
     "version": "1.0.0",
     "orientation": "portrait",
-   "icon": "./assets/favicon.ico",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
