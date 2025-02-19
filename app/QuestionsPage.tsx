@@ -1,38 +1,33 @@
-// QuestionsPage.tsx
 import React from "react";
-import { SafeAreaView, View, Text, StyleSheet, Image, ScrollView } from "react-native";
-import Colors from "../constants/Colors";
-import FontSize from "../constants/FontSize";
-import { useRoute } from "@react-navigation/native";
-import { RouteProp } from "@react-navigation/native";
+import {SafeAreaView, ScrollView, View, StyleSheet, Text, Image  } from "react-native";
+import Colors from "./constants/Colors";
+import FontSize from "./constants/FontSize";
+import { RouteProp, useRoute } from "@react-navigation/native";
+import { RootStackParamList } from "../App";  // Import the type
 
-// Define the type for the route params
-type RootStackParamList = {
-  RecordStartingPage: undefined;
-  QuestionsPage: { sampleText: string }; // Define sampleText as a string in route params
-};
+// Define type for route params
+type QuestionsPageRouteProp = RouteProp<RootStackParamList, "QuestionsPage">;
 
 export default function QuestionsPage() {
-  // Use the useRoute hook with the correct type for route params
-  const route = useRoute<RouteProp<RootStackParamList, "QuestionsPage">>();
-  const { sampleText } = route.params; // Now sampleText is properly typed
+  const route = useRoute<QuestionsPageRouteProp>();  
+  const { sampleText } = route.params;  
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.surfaceContainerLowest }}>
-      <ScrollView style={{ flex: 1, paddingTop: 17 }}>
+    <ScrollView style={{ flex: 1, paddingTop: 17 }}>
       <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 17, marginHorizontal: 26 }}>
-              <Image
-                       source={require("../assets/images/logo.png")}
-                       resizeMode="stretch"
-                       style={{ width: 32, height: 26, marginRight: 14 }}
-                       />
-              <Text style={{ color: Colors.shadow, fontSize: FontSize.body_small, flex: 1 }}>{"Signify"}</Text>
-              </View>
-      <View style={styles.textContainer}>
-        <Text style={styles.text}>{sampleText}</Text>
+          <Image
+                source={require("./assets/images/logo.png")}
+                resizeMode="stretch"
+                style={{ width: 32, height: 26, marginRight: 14 }}
+          />
+          <Text style={{ color: Colors.shadow, fontSize: FontSize.body_small, flex: 1 }}>{"Signify"}</Text>
       </View>
-      </ScrollView>
-    </SafeAreaView>
+    <View style={styles.textContainer}>
+      <Text style={styles.text}>{sampleText}</Text>
+    </View>
+    </ScrollView>
+  </SafeAreaView>
   );
 }
 

@@ -1,241 +1,76 @@
-import React, { useEffect, useRef, useState } from "react";
-import { SafeAreaView, View, ScrollView, Image, Text, StyleSheet, Animated, TouchableOpacity } from "react-native";
-import { useNavigation } from "@react-navigation/native"; 
-import Colors from "../constants/Colors";
-import FontSize from "../constants/FontSize";
+import React, { useEffect, useState } from "react";
+import { View, Text, TouchableOpacity, Platform } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { RootStackParamList } from "../App";  // 👈 Import the defined types
+import io from "socket.io-client";
 
-// Define the type for the navigation param
-type NavigationProps = {
-	navigate: (screen: string, params?: { sampleText: string }) => void;
-	goBack: () => void; // Add this line
-  };
+let Voice: any;
+if (Platform.OS !== "web") {
+  Voice = require("@react-native-community/voice").default;
+}
+
+// ✅ Type for navigation prop
+type NavigationProp = StackNavigationProp<RootStackParamList, "RecordStartingPage">;
+
+const socket = io("http://192.168.43.214:5000");
 
 export default function RecordStartingPage() {
-  // Create animated values for the heights of the boxes
-  const animatedValues = useRef(
-    Array(24) // Number of boxes in the wavy animation
-      .fill(0)
-      .map(() => new Animated.Value(0))
-  ).current;
-
-  // Navigation hook
-  const navigation = useNavigation<NavigationProps>();
-
-  // State for time tracking
-  const [seconds, setSeconds] = useState(0);
-  const [minutes, setMinutes] = useState(0);
-  const [hours, setHours] = useState(0);
-
-  // State for play/pause functionality
-  const [isRunning, setIsRunning] = useState(true); // Initially running
-  const [isPaused, setIsPaused] = useState(false); // Initially on pause icon
-
-  // New state for recorded text (mock text for this example)
-  const [sampleText, setSampleText] = useState("ඔයාට අසාධ්‍යමීකතා තිබෙනවාද?");
+  const navigation = useNavigation<NavigationProp>();  // ✅ Correctly typed navigation
+  const [isRecording, setIsRecording] = useState(false);
+  const [transcript, setTranscript] = useState("");
 
   useEffect(() => {
-    // Function to animate the height of each box
-    const animate = () => {
-      const animations = animatedValues.map((value) =>
-        Animated.loop(
-          Animated.sequence([
-            Animated.timing(value, {
-              toValue: Math.random() * 70,
-              duration: 300,
-              useNativeDriver: false,
-            }),
-            Animated.timing(value, {
-              toValue: Math.random() * 70,
-              duration: 300,
-              useNativeDriver: false,
-            }),
-          ])
-        )
-      );
-      Animated.stagger(100, animations).start();
-    };
+    if (Platform.OS !== "web" && Voice) {
+      Voice.onSpeechResults = (e: { value?: string[] }) => {
+        const text = e.value ? e.value[0] : "";
+        setTranscript(text);
+        socket.emit("audio_chunk", { audio: text });
+      };
 
-    if (!isPaused) {
-      animate();
+      socket.on("transcription", (data: { text: string }) => {
+        setTranscript(data.text);
+      });
+
+      return () => {
+        Voice.destroy().then(Voice.removeAllListeners);
+        socket.disconnect();
+      };
     }
-  }, [isPaused]);
+  }, []);
 
-  // Timer effect to update the time
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-
-    if (isRunning) {
-      interval = setInterval(() => {
-        setSeconds((prevSeconds) => {
-          if (prevSeconds === 59) {
-            setMinutes((prevMinutes) => {
-              if (prevMinutes === 59) {
-                setHours((prevHours) => prevHours + 1);
-                return 0;
-              }
-              return prevMinutes + 1;
-            });
-            return 0;
-          }
-          return prevSeconds + 1;
-        });
-      }, 1000);
-    } else if (!isRunning && interval !== null) {
-      clearInterval(interval);
+  const startRecording = async () => {
+    setIsRecording(true);
+    if (Platform.OS !== "web") {
+      await Voice.start("si-LK");
+    } else {
+      const SpeechRecognition =
+        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.lang = "si-LK";
+      recognition.onresult = (event: any) => {
+        setTranscript(event.results[0][0].transcript);
+        socket.emit("audio_chunk", { audio: event.results[0][0].transcript });
+      };
+      recognition.start();
     }
-
-    return () => clearInterval(interval as NodeJS.Timeout);
-  }, [isRunning]);
-
-  // Function to handle "Done" button click
-  const handleDone = () => {
-    navigation.navigate("QuestionsPage", { sampleText }); // Pass sampleText as a parameter
   };
 
-  // Function to handle play/pause button click
-  const togglePausePlay = () => {
-    setIsRunning(!isRunning); // Toggle running state
-    setIsPaused(!isPaused); // Toggle icon
-  };
-
-  // Function to handle cancel button click
-  const handleCancel = () => {
-    navigation.goBack(); // Navigate back to the previous page
+  const stopRecording = async () => {
+    setIsRecording(false);
+    if (Platform.OS !== "web") {
+      await Voice.stop();
+    }
+    navigation.navigate("QuestionsPage", { sampleText: transcript });  // ✅ Now TypeScript recognizes this!
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        {/* Header with logo and text */}
-        <View style={styles.row}>
-          <Image
-            source={require("../assets/images/logo.png")}
-            resizeMode="stretch"
-            style={{ width: 32, height: 26, marginRight: 14 }}
-          />
-          <Text style={styles.text}>{"Signify"}</Text>
-        </View>
-
-        {/* Animated wavy boxes or static line image based on pause/play state */}
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginHorizontal: 22, marginBottom: 240, marginTop: 200 }}>
-          {isPaused ? (
-            <Image
-              source={require("../assets/images/line.png")}
-              resizeMode="stretch"
-              style={{ width: "100%", height: 3, position: "relative", top: 25 }}
-            />
-          ) : (
-            animatedValues.map((animatedValue, index) => (
-              <Animated.View
-                key={index}
-                style={[
-                  styles.boxAnimated,
-                  {
-                    height: animatedValue,
-                  },
-                ]}
-              />
-            ))
-          )}
-        </View>
-      </ScrollView>
-
-      {/* Timer display */}
-      <View style={styles.timerContainer}>
-        <View style={styles.column}>
-          <Text style={styles.text2}>
-            {String(hours).padStart(2, "0")} : {String(minutes).padStart(2, "0")} : {String(seconds).padStart(2, "0")}
-          </Text>
-        </View>
-      </View>
-
-      {/* Recording controls: Cancel, Record, Pause/Play, Done */}
-      <View style={styles.controlsContainer}>
-        <TouchableOpacity onPress={handleCancel}>
-          <Image
-            source={require("../assets/images/cancel.png")}
-            resizeMode="stretch"
-            style={{ width: 42, height: 42, marginLeft: 15 }}
-          />
-        </TouchableOpacity>
-        <View style={styles.box10}></View>
-        <Image
-          source={require("../assets/images/RecordingIcon.png")}
-          resizeMode="stretch"
-          style={{ width: 62, height: 62, marginHorizontal: 30 }}
-        />
-        <TouchableOpacity onPress={togglePausePlay}>
-          <Image
-            source={isPaused ? require("../assets/images/play.png") : require("../assets/images/pause.png")}
-            resizeMode="stretch"
-            style={{ width: 42, height: 42 }}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleDone}>
-          <Image
-            source={require("../assets/images/done.png")}
-            resizeMode="stretch"
-            style={{ width: 42, height: 42, marginLeft: 25 }}
-          />
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+    
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <TouchableOpacity onPress={isRecording ? stopRecording : startRecording} style={{ padding: 20, backgroundColor: "blue" }}>
+        <Text style={{ color: "white" }}>{isRecording ? "Stop Recording" : "Start Recording"}</Text>
+      </TouchableOpacity>
+      <Text>{transcript}</Text>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.surfaceContainerLowest,
-  },
-  scrollView: {
-    flex: 1,
-    backgroundColor: Colors.surfaceContainerLowest,
-    paddingTop: 14,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-    marginHorizontal: 15,
-  },
-  text: {
-    color: Colors.shadow,
-    fontSize: FontSize.body_small,
-    flex: 1,
-  },
-  text2: {
-    color: Colors.shadow,
-    fontSize: FontSize.body_large,
-  },
-  boxAnimated: {
-    width: 4,
-    backgroundColor: "#254B9D",
-    borderRadius: 10,
-  },
-  column: {
-    width: 100,
-    alignItems: "center",
-  },
-  box10: {
-    flex: 1,
-  },
-  timerContainer: {
-    position: "relative",
-    top: -200,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
-    height: 40,
-  },
-  controlsContainer: {
-    position: "relative",
-    bottom: 50,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    width: "95%",
-    paddingHorizontal: 40,
-  },
-});

@@ -1,7 +1,7 @@
 import React from "react";
 import { SafeAreaView, ScrollView, View, Text, ImageBackground, Image ,StyleSheet,TouchableOpacity} from "react-native";
-import Colors from "../constants/Colors";
-import FontSize from "../constants/FontSize";
+import Colors from "./constants/Colors";
+import FontSize from "./constants/FontSize";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
 
 export type RootStackParamList = {
@@ -23,7 +23,7 @@ export default function RecordingPage() {
 			<ScrollView style={{ flex: 1, paddingTop: 17 }}>
 				<View style={{ flexDirection: "row", alignItems: "center", marginBottom: 17, marginHorizontal: 26 }}>
 				<Image
-                 source={require("../assets/images/logo.png")}
+                 source={require("./assets/images/logo.png")}
                  resizeMode="stretch"
                  style={{ width: 32, height: 26, marginRight: 14 }}
                  />
@@ -33,7 +33,7 @@ export default function RecordingPage() {
 				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center',paddingTop: 250, }} >
 				<TouchableOpacity onPress={goToRecordStartingPage}>
 				<Image
-                 source={require("../assets/images/recordingCircle.png")}
+                 source={require("./assets/images/recordingCircle.png")}
                  resizeMode="stretch"
                  style={{ width: 80, height: 80, marginRight: 14 }}
                  />
