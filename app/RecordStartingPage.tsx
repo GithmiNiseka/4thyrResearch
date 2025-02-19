@@ -15,7 +15,11 @@ if (Platform.OS !== "web") {
 // Type for navigation prop
 type NavigationProp = StackNavigationProp<RootStackParamList, "RecordStartingPage">;
 
-const socket = io("http://192.168.43.214:5000");
+const socket = io("http://192.168.43.214:5000", {
+  transports: ["websocket"], // Force WebSocket transport
+  reconnectionAttempts: 5, // Retry connecting up to 5 times
+  timeout: 10000, // Timeout for socket connection attempt
+});
 
 export default function RecordStartingPage() {
   const navigation = useNavigation<NavigationProp>();  
@@ -63,7 +67,7 @@ export default function RecordStartingPage() {
     if (Platform.OS !== "web") {
       await Voice.stop();
     }
-    navigation.navigate("QuestionsPage", { sampleText: transcript });  // ✅ Now TypeScript recognizes this!
+    navigation.navigate("QuestionsPage", { sampleText: transcript });  
   };
 
   return (
