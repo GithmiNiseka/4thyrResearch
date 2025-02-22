@@ -15,7 +15,7 @@ if (Platform.OS !== "web") {
 // Type for navigation prop
 type NavigationProp = StackNavigationProp<RootStackParamList, "RecordStartingPage">;
 
-const socket = io("http://192.168.43.214:5000", {
+const socket = io("http://192.168.1.101:5000", {
   transports: ["websocket"], // Force WebSocket transport
   reconnectionAttempts: 5, // Retry connecting up to 5 times
   timeout: 10000, // Timeout for socket connection attempt

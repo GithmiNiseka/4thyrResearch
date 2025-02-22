@@ -11,8 +11,15 @@ def home():
 def favicon():
     return '', 204  # Handle favicon request
 
-@socketio.on("audio_chunk")
+@socketio.on('audio_chunk')
 def handle_audio_chunk(data):
-    audio_bytes = base64.b64decode(data["audio"])
-    transcript = transcribe_audio(audio_bytes)
-    socketio.emit("transcription", {"text": transcript})
+    try:
+        audio_data = data['audio']
+        
+        # Your logic for handling audio (decoding, saving, etc.)
+        print(f"Received audio data: {audio_data[:30]}...")  # For debugging
+        
+
+    except Exception as e:
+        print(f"Error processing audio: {e}")
+        socketio.emit('error', {'message': 'Error processing audio'})

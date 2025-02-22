@@ -7,4 +7,3 @@ CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins
 
 socketio = SocketIO(app, cors_allowed_origins="*")  # Enable WebSockets
 
-from app import routes
