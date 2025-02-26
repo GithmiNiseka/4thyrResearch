@@ -10,7 +10,7 @@ type QuestionsPageRouteProp = RouteProp<RootStackParamList, "QuestionsPage">;
 
 export default function QuestionsPage() {
   const route = useRoute<QuestionsPageRouteProp>();  
-  const { sampleText } = route.params;  
+  const { sampleText = "No transcription available" } = route.params || {};  // Provide default value 
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.surfaceContainerLowest }}>

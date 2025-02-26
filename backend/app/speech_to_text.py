@@ -3,22 +3,19 @@ import io
 
 client = speech.SpeechClient()
 
-def transcribe_audio(audio_data):
-    try:
-        audio = speech.RecognitionAudio(content=audio_data)
-        config = speech.RecognitionConfig(
-            encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
-            sample_rate_hertz=16000,
-            language_code="si-LK"  # Sinhala language code
-        )
+def transcribe_streaming(audio_stream):
+    """Handles real-time Sinhala speech recognition."""
+    config = speech.RecognitionConfig(
+        encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+        sample_rate_hertz=16000,
+        language_code="si-LK",
+    )
+    streaming_config = speech.StreamingRecognitionConfig(config=config, interim_results=True)
 
-        response = client.recognize(config=config, audio=audio)
-        results = [result.alternatives[0].transcript for result in response.results]
-        
-        if results:
-            return " ".join(results)
-        else:
-            return "No speech detected"
-    except Exception as e:
-        print(f"Error during transcription: {e}")
-        return "Error during transcription"
+    requests = (speech.StreamingRecognizeRequest(audio_content=chunk) for chunk in audio_stream)
+
+    response = client.streaming_recognize(streaming_config, requests)
+    
+    for result in response:
+        for alternative in result.results:
+            print("Real-time transcript:", alternative.alternatives[0].transcript)
