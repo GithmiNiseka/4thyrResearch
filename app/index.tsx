@@ -132,7 +132,7 @@ export default function IndexPage() {
       <ScrollView style={{ flex: 1, backgroundColor: Colors.surfaceContainerLowest, paddingTop: 17 }}>
         <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 17, marginHorizontal: 14 }}>
           <Image
-            source={require("../../assets/images/logo.png")} // Adjusted path
+            source={require("./assets/images/logo.png")} // Adjusted path
             resizeMode="stretch"
             style={{ width: 32, height: 26, marginRight: 14 }}
           />
@@ -161,7 +161,7 @@ export default function IndexPage() {
         >
           <TouchableOpacity onPress={goToRecordingPage}>
             <Image
-              source={require("../../assets/images/recordingCircle.png")}
+              source={require("./assets/images/recordingCircle.png")}
               resizeMode="stretch"
               style={{ width: 80, height: 80, marginRight: 14 }}
             />
@@ -169,7 +169,7 @@ export default function IndexPage() {
 
           <TouchableOpacity onPress={goToTypingPage}> {/* Added navigation to TypingPage */}
             <Image
-              source={require("../../assets/images/typingCircle.png")}
+              source={require("./assets/images/typingCircle.png")}
               resizeMode="stretch"
               style={{ width: 80, height: 80, marginRight: 0 }}
             />
