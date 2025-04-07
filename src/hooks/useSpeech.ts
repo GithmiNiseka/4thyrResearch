@@ -1,42 +1,69 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { Audio } from 'expo-av';
 import { startRecording, stopRecording } from '../services/speechService';
 
-export const useSpeech = () => {
+interface SpeechHookReturn {
+  isRecording: boolean;
+  speechText: string;
+  error: string | null;
+  toggleRecording: () => Promise<void>;
+  clearSpeechText: () => void;
+  recordingStatus: string;
+}
+
+export const useSpeech = (): SpeechHookReturn => {
   const [isRecording, setIsRecording] = useState(false);
   const [speechText, setSpeechText] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [recordingStatus, setRecordingStatus] = useState('idle');
 
-  const toggleRecording = async () => {
+  const toggleRecording = useCallback(async () => {
     try {
       if (isRecording) {
-        // Stop recording
-        const text = await stopRecording();
+        setRecordingStatus('processing');
+        const { text } = await stopRecording(recording);
+        setRecording(null);
         setSpeechText(prev => prev ? `${prev} ${text}` : text);
         setError(null);
+        setRecordingStatus('idle');
       } else {
-        // Start recording
         setError(null);
-        const success = await startRecording();
-        if (!success) {
-          throw new Error('Failed to start recording');
-        }
+        setRecordingStatus('starting');
+        const newRecording = await startRecording();
+        setRecording(newRecording);
+        setRecordingStatus('recording');
       }
-      setIsRecording(!isRecording);
+      setIsRecording(prev => !prev);
     } catch (err) {
+      console.error('Recording error:', err);
       setError(err instanceof Error ? err.message : 'Recording error');
       setIsRecording(false);
+      setRecording(null);
+      setRecordingStatus('error');
+      
+      if (recording) {
+        try {
+          await stopRecording(recording);
+        } catch (cleanupError) {
+          console.error('Cleanup error:', cleanupError);
+        }
+      }
     }
-  };
+  }, [isRecording, recording]);
+
+  const clearSpeechText = useCallback(() => {
+    setSpeechText('');
+    setError(null);
+  }, []);
 
   useEffect(() => {
     return () => {
-      if (isRecording) {
-        stopRecording().catch(() => {});
+      if (recording) {
+        stopRecording(recording).catch(() => {});
       }
     };
-  }, [isRecording]);
-
-  const clearSpeechText = () => setSpeechText('');
+  }, [recording]);
 
   return {
     isRecording,
@@ -44,5 +71,6 @@ export const useSpeech = () => {
     error,
     toggleRecording,
     clearSpeechText,
+    recordingStatus,
   };
 };

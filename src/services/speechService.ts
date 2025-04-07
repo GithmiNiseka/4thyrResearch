@@ -1,183 +1,73 @@
-import { Audio } from 'expo-av';
-import axios from 'axios';
-import { GCP_SPEECH_API_KEY } from '../config/api';
+// services/speechservice.ts
+import axios from "axios";
+import * as FileSystem from "expo-file-system";
+import { Audio, AVPlaybackStatus } from "expo-av";
+import { encode } from "base64-arraybuffer";
 
-interface SpeechConfig {
-  encoding: string;
-  sampleRateHertz: number;
-  languageCode: string;
-  enableAutomaticPunctuation?: boolean;
-  model?: string;
-}
+// Use the same IP as your transcription endpoint
+const SERVER_URL = "http://192.168.130.17:5000/speak";
 
-let recording: Audio.Recording | null = null;
-
-export const startRecording = async (): Promise<boolean> => {
-  try {
-    // Clean up any existing recording
-    if (recording) {
-      await stopRecording();
-    }
-
-    // Request permissions
-    const permission = await Audio.requestPermissionsAsync();
-    if (!permission.granted) {
-      throw new Error('Microphone permission not granted');
-    }
-
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: true,
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
-    });
-
-    // Configure and start recording
-    recording = new Audio.Recording();
-    await recording.prepareToRecordAsync({
-        android: {
-            extension: '.wav',
-            outputFormat: Audio.AndroidOutputFormat.DEFAULT,
-            audioEncoder: Audio.AndroidAudioEncoder.DEFAULT,
-            sampleRate: 16000,
-            numberOfChannels: 1,
-            bitRate: 128000,
-        },
-        ios: {
-            extension: '.wav',
-            outputFormat: Audio.IOSOutputFormat.LINEARPCM,
-            audioQuality: Audio.IOSAudioQuality.HIGH,
-            sampleRate: 16000,
-            numberOfChannels: 1,
-            bitRate: 128000,
-            linearPCMBitDepth: 16,
-            linearPCMIsBigEndian: false,
-            linearPCMIsFloat: false,
-        },
-        web: {
-            mimeType: undefined,
-            bitsPerSecond: undefined
-        }
-    });
-    
-    await recording.startAsync();
-    return true;
-  } catch (error) {
-    console.error('Failed to start recording:', error);
-    if (recording) {
-      await recording.stopAndUnloadAsync().catch(() => {});
-      recording = null;
-    }
-    return false;
-  }
-};
-
-export const stopRecording = async (): Promise<string> => {
-  if (!recording) {
-    throw new Error('No active recording to stop');
-  }
+export const speakText = async (text: string, currentSound: Audio.Sound | null): Promise<Audio.Sound | null> => {
+  if (!text.trim()) return currentSound;
 
   try {
-    await recording.stopAndUnloadAsync();
-    const uri = recording.getURI();
-    recording = null;
-    
-    if (!uri) {
-      throw new Error('No audio file was recorded');
-    }
-
-    return await recognizeSpeech(uri);
-  } catch (error) {
-    recording = null;
-    console.error('Failed to stop recording:', error);
-    throw error;
-  }
-};
-
-const recognizeSpeech = async (audioUri: string): Promise<string> => {
-  try {
-    const audioContent = await convertAudioToBase64(audioUri);
-    
-    const config: SpeechConfig = {
-      encoding: 'LINEAR16',
-      sampleRateHertz: 16000,
-      languageCode: 'si-LK',
-      enableAutomaticPunctuation: true,
-      model: 'default'
-    };
+    // First stop any existing sound
+    await stopSpeech(currentSound);
 
     const response = await axios.post(
-      `https://speech.googleapis.com/v1/speech:recognize?key=${GCP_SPEECH_API_KEY}`,
-      {
-        config: config,
-        audio: {
-          content: audioContent,
-        },
-      },
-      {
-        timeout: 10000,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
+      SERVER_URL, 
+      { text }, 
+      { 
+        responseType: "arraybuffer",
+        timeout: 15000 // Add timeout to prevent hanging
       }
     );
 
-    if (!response.data?.results) {
-      throw new Error('No recognition results returned');
+    if (response.status !== 200) {
+      throw new Error(`Server returned ${response.status}`);
     }
 
-    const transcripts = response.data.results
-      .flatMap((result: any) => 
-        result.alternatives?.map((alt: any) => alt.transcript?.trim()) || []
-      )
-      .filter((t: string) => t && t.length > 0);
-
-    return transcripts.join(' ') || '';
-  } catch (error) {
-    console.error('Speech recognition error:', error);
-    if (axios.isAxiosError(error)) {
-      console.error('API response:', error.response?.data);
-      throw new Error(`Speech API error: ${error.response?.status} - ${error.message}`);
+    if (!response.data || response.data.byteLength === 0) {
+      throw new Error("Empty audio response from server");
     }
-    throw new Error('Failed to recognize speech');
-  }
-};
 
-const convertAudioToBase64 = async (uri: string): Promise<string> => {
-  try {
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => reject(new Error('Failed to read audio file'));
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          const base64Data = reader.result.split(',')[1];
-          if (!base64Data) {
-            reject(new Error('Invalid base64 audio data'));
-          }
-          resolve(base64Data);
-        } else {
-          reject(new Error('Unexpected audio file format'));
-        }
-      };
-      reader.readAsDataURL(blob);
+    // Convert ArrayBuffer to Base64
+    const base64Audio = encode(response.data);
+    const path = FileSystem.cacheDirectory + "speech.mp3";
+
+    await FileSystem.writeAsStringAsync(path, base64Audio, {
+      encoding: FileSystem.EncodingType.Base64,
     });
+
+    const { sound: newSound } = await Audio.Sound.createAsync(
+      { uri: path },
+      { shouldPlay: true }
+    );
+
+    newSound.setOnPlaybackStatusUpdate((status: AVPlaybackStatus) => {
+      if (status.isLoaded && status.didJustFinish) {
+        newSound.unloadAsync().catch(() => {}); // Silent catch for cleanup
+      }
+    });
+
+    return newSound;
   } catch (error) {
-    console.error('Audio conversion error:', error);
-    throw new Error('Failed to process audio file');
+    console.error("Speech generation error:", error);
+    throw error; // Re-throw the error to be caught by the caller
   }
 };
 
-export const cleanupRecordings = async () => {
-  if (recording) {
-    try {
-      await recording.stopAndUnloadAsync();
-    } catch (error) {
-      console.error('Cleanup error:', error);
-    } finally {
-      recording = null;
+export const stopSpeech = async (sound: Audio.Sound | null): Promise<null> => {
+  if (!sound) return null;
+  
+  try {
+    const status = await sound.getStatusAsync();
+    if (status.isLoaded) {
+      await sound.stopAsync();
+      await sound.unloadAsync();
     }
+  } catch (error) {
+    console.error("Error stopping sound:", error);
   }
+  return null;
 };

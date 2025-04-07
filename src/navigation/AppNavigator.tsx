@@ -1,7 +1,6 @@
-
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
-import ChatScreen from '../screens/ChatScreen';
+import ChatScreen from '../screens/ChatScreen'; // Verify this path is correct
 
 export type RootStackParamList = {
   Chat: undefined;
@@ -9,14 +8,14 @@ export type RootStackParamList = {
 
 const Stack = createStackNavigator<RootStackParamList>();
 
-const AppNavigator: React.FC = () => {
+const AppNavigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator>
         <Stack.Screen 
           name="Chat" 
-          component={ChatScreen} 
-          options={{ title: 'Deaf App' }}
+          component={ChatScreen} // Make sure this is the correct component
+          options={{ title: 'Doctor-Patient Chat' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

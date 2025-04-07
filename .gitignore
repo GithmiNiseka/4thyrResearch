@@ -35,5 +35,7 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-# API Keys
+# api
+
+deaf-app-key.json
 api.ts

@@ -15,8 +15,10 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "This app needs microphone access to convert your speech to text"
-      }
+        "NSMicrophoneUsageDescription": "This app needs microphone access to convert your speech to text",
+        "NSSpeechRecognitionUsageDescription": "This app uses speech synthesis to read messages aloud"
+      },
+      "UIBackgroundModes": ["audio"]
     },
     "android": {
       "adaptiveIcon": {
