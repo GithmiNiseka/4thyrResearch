@@ -17,6 +17,7 @@ interface ChatBubbleProps {
     sender: 'doctor' | 'patient';
     isOption?: boolean;
     isEdited?: boolean;
+    isTranscription?: boolean;
     timestamp: string;
   };
   onSelect?: (text: string) => void;
@@ -87,7 +88,10 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
         styles.bubblePointer,
         message.sender === 'doctor' ? styles.doctorPointer : styles.patientPointer
       ]} />
-      
+      {/* Add transcription indicator */}
+      {message.isTranscription && (
+        <Text style={styles.transcriptionLabel}>Transcription</Text>
+      )}
       {/* Message content */}
       <View style={[
         styles.bubble,
@@ -175,6 +179,13 @@ const styles = StyleSheet.create({
   patientContainer: {
     alignSelf: 'flex-end',
     marginLeft: theme.spacing.large,
+  },
+
+  transcriptionLabel: {
+    fontSize: 10,
+    color: theme.colors.textSecondary,
+    marginBottom: 4,
+    fontStyle: 'italic',
   },
   
   // Bubble pointer styling

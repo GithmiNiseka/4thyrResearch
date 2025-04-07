@@ -26,6 +26,7 @@ const ChatScreen: React.FC = () => {
     sendDoctorMessage,
     selectPatientResponse,
     handleSpeak,
+    addMessage,
     startEditing,
     saveEditing,
     cancelEditing,
@@ -41,7 +42,14 @@ const ChatScreen: React.FC = () => {
 
   const handleSend = () => {
     if (!inputText.trim()) return;
-    sendDoctorMessage(inputText);
+    
+    // Add as patient message (right side)
+    addMessage({
+      text: inputText,
+      sender: 'patient',
+      isOption: false
+    }, true); // true = speak this message
+    
     setInputText('');
   };
 

@@ -80,7 +80,7 @@ const handleSpeak = async (messageId: string, text: string) => {
       ...prev,
       messages: [...prev.messages, newMessage],
     }));
-
+  
     if (speak && message.sender === 'patient') {
       await handleSpeak(newMessage.id, newMessage.text);
     }
@@ -189,6 +189,7 @@ const handleSpeak = async (messageId: string, text: string) => {
     saveEditing,     // in your hook's return
     cancelEditing,   // statement
     updateEditText,  // (previously called updateEditing)
-    cleanupSound
+    cleanupSound,
+    addMessage
   };
 };

@@ -8,6 +8,7 @@ import io
 import tempfile
 import logging
 import unicodedata
+import re
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -38,7 +39,7 @@ consonants = {
     "ද": "d", "න": "n", "ප": "p", "බ": "b",
     "ම": "m", "ය": "y", "ර": "r", "ල": "l",
     "ව": "v", "ස": "s", "හ": "h", "ළ": "l",
-    "ෆ": "f"
+    "ෆ": "f", "ඳ": "nd"
 }
 
 # Mappings for vowel diacritics that modify a consonant
@@ -186,7 +187,10 @@ def transcribe_audio():
             )
             
             logger.info(f"Transcription successful: {transcript[:50]}...")
-            return jsonify({"transcript": transcript})
+            return jsonify({
+                "transcript": transcript,
+                "isTranscription": True
+            })
             
         except Exception as e:
             logger.error(f"Transcription failed: {str(e)}")
@@ -218,6 +222,13 @@ def speak():
     phonetic_text = transliterate_sinhala(text)
     logger.info(f"Converted Phonetic Text: {phonetic_text}")
 
+    # Strict Sinhala validation
+    if re.search(r'[a-zA-Z0-9]', text):  # Blocks English letters/numbers
+        return jsonify({
+            'error': 'Non-Sinhala characters detected',
+            'suggestion': 'Please use only Sinhala script (සිංහල අක්ෂර)'
+        }), 400
+    
     try:
         # Initialize the Google Cloud TTS client
         client = texttospeech.TextToSpeechClient()
