@@ -8,7 +8,7 @@ import FontSize from "../../assets/constants/FontSize";
 export type RootStackParamList = {
   Home: undefined;
   Record: undefined;
-  TypingPage: undefined;
+  Type: undefined;
 };
 
 export default function HomeScreen() {
@@ -16,7 +16,7 @@ export default function HomeScreen() {
 
 
   const goToTypingPage = () => {
-    navigation.navigate("TypingPage");
+    navigation.navigate("Type");
   };
 
   // Function to navigate to RecordingPage

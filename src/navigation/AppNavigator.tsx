@@ -3,11 +3,13 @@ import { NavigationContainer } from '@react-navigation/native';
 import ChatScreen from '../screens/ChatScreen';
 import HomeScreen from '../screens/HomeScreen'; 
 import RecordingScreen from '../screens/RecordingScreen'; 
+import TypingingScreen from '../screens/TypingScreen'; 
 
 // Define your route params
 export type RootStackParamList = {
   Home: undefined;
   Record: undefined;
+  Type: undefined;
   Chat: undefined;
 };
 
@@ -20,17 +22,22 @@ const AppNavigator = () => {
         <Stack.Screen 
           name="Home" 
           component={HomeScreen} 
-          options={{ title: 'Home' }} // Customize as needed
+          options={{ headerShown: false }}
         />
          <Stack.Screen 
           name="Record" 
           component={RecordingScreen} 
-          options={{ title: 'Record' }}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen 
+          name="Type" 
+          component={TypingingScreen} 
+          options={{ headerShown: false }}
         />
         <Stack.Screen 
           name="Chat" 
           component={ChatScreen}
-          options={{ title: 'Doctor-Patient Chat' }}
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>
