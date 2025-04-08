@@ -31,7 +31,8 @@ const ChatScreen: React.FC = () => {
     saveEditing,
     cancelEditing,
     updateEditText,
-    cleanupSound
+    cleanupSound,
+    handleWordPress // Add this destructuring
   } = useChat();
 
   const [inputText, setInputText] = useState('');
@@ -173,7 +174,8 @@ const ChatScreen: React.FC = () => {
                 onSaveEdit={saveEditing}
                 onCancelEdit={cancelEditing}
                 onUpdateEditText={updateEditText}
-              />
+                onWordPress={(word) => handleWordPress(word, item.id)} // Make sure this is passed
+                />
             )}
             contentContainerStyle={styles.messagesContainer}
             keyboardShouldPersistTaps="handled"

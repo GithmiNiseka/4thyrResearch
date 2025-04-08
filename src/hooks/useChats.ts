@@ -3,6 +3,7 @@ import { Audio } from 'expo-av';
 import { Message, ChatState } from '../types/chatTypes';
 import { generateResponse } from '../services/geminiService';
 import { speakText, stopSpeech } from '../services/speechService';
+import { translateSinhalaToEnglish, getWikipediaImage } from '../services/termService';
 
 export const useChat = (initialState: Partial<ChatState> = {}) => {
   const [chatState, setChatState] = useState<ChatState>({
@@ -17,6 +18,29 @@ export const useChat = (initialState: Partial<ChatState> = {}) => {
     
   });
   
+  const handleWordPress = async (word: string, messageId: string) => {
+    try {
+      const englishTerm = await translateSinhalaToEnglish(word);
+      const imgUrl = await getWikipediaImage(englishTerm);
+      
+      if (imgUrl) {
+        setChatState(prev => ({
+          ...prev,
+          messages: prev.messages.map(msg => 
+            msg.id === messageId 
+              ? { 
+                  ...msg, 
+                  hoverData: { term: word, english: englishTerm, imgUrl } 
+                } 
+              : msg
+          )
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching term data:', error);
+    }
+  }; 
+
   const [sound, setSound] = useState<Audio.Sound | null>(null);
 
 // hooks/useChat.ts
@@ -190,6 +214,7 @@ const handleSpeak = async (messageId: string, text: string) => {
     cancelEditing,   // statement
     updateEditText,  // (previously called updateEditing)
     cleanupSound,
-    addMessage
+    addMessage,
+    handleWordPress,
   };
 };

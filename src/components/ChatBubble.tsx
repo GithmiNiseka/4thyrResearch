@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
+import React from 'react';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  StyleSheet, 
   ActivityIndicator,
   TextInput,
+  Image, 
+  View as RNView 
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
-import MedicalImagePopup from './MedicalImagePopup';
+import { HoverData } from '../types/chatTypes';
 
 interface ChatBubbleProps {
   message: {
@@ -18,11 +20,14 @@ interface ChatBubbleProps {
     sender: 'doctor' | 'patient';
     isOption?: boolean;
     isEdited?: boolean;
+    isTranscription?: boolean;
     timestamp: string;
+    hoverData?: HoverData | null;
   };
   onSelect?: (text: string) => void;
   onSpeak?: (messageId: string, text: string) => void;
   onEdit?: (messageId: string) => void;
+  onWordPress?: (word: string) => void; // Add this line
   isSpeaking?: boolean;
   isAudioLoading?: boolean;
   isOptionLoading?: boolean;
@@ -38,6 +43,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   onSelect,
   onSpeak,
   onEdit,
+  onWordPress,
   isSpeaking = false,
   isAudioLoading = false,
   isOptionLoading = false,
@@ -47,30 +53,6 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   onCancelEdit = () => {},
   onUpdateEditText = () => {},
 }) => {
-  const [selectedMedicalTerm, setSelectedMedicalTerm] = useState<string | null>(null);
-  const [loadingTerm, setLoadingTerm] = useState(false);
-
-  // Dictionary of common Sinhala medical terms
-  const medicalTerms: Record<string, boolean> = {
-    'හිසරදය': true, // Headache
-    'උණ': true,      // Fever
-    'දුවිලි': true,   // Dust allergy
-    'ඇස්': true,      // Eyes
-    'හෘදය': true,    // Heart
-    'බඩවැල්': true,  // Stomach
-    'කැස්ස': true,   // Cough
-    'සෙම්': true,    // Asthma
-    'රුධිර': true,   // Blood
-    'මාංශ': true,    // Muscle
-    // Add more terms as needed
-  };
-
-  const handleWordPress = (word: string) => {
-    if (medicalTerms[word]) {
-      setSelectedMedicalTerm(word);
-    }
-  };
-
   if (isEditing) {
     return (
       <View style={[
@@ -112,37 +94,36 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
         styles.bubblePointer,
         message.sender === 'doctor' ? styles.doctorPointer : styles.patientPointer
       ]} />
-      
+      {/* Add transcription indicator */}
+      {message.isTranscription && (
+        <Text style={styles.transcriptionLabel}>Transcription</Text>
+      )}
       {/* Message content */}
       <View style={[
         styles.bubble,
         message.sender === 'doctor' ? styles.doctorBubble : styles.patientBubble
       ]}>
         <View style={styles.messageHeader}>
-          <View style={styles.messageContent}>
-            {message.text.split(' ').map((word, index) => (
-              <TouchableOpacity 
-                key={index} 
-                onPress={() => handleWordPress(word)}
-                disabled={!medicalTerms[word]}
-              >
-                <Text 
-                  style={[
-                    styles.word,
-                    medicalTerms[word] && styles.medicalTerm,
-                    selectedMedicalTerm === word && styles.selectedTerm
-                  ]}
-                >
-                  {word + ' '}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          
+        <Text style={styles.text}>
+          {message.text.split(' ').map((word: string, index: number) => (
+            <TouchableOpacity 
+              key={`${word}-${index}`} 
+              onPress={() => onWordPress?.(word)}
+            >
+              <Text style={[
+                { color: theme.colors.text },
+                message.hoverData?.term === word && styles.highlightedWord
+              ]}>
+                {word + ' '}
+              </Text>
+            </TouchableOpacity>
+          ))}
           {message.isEdited && (
             <Text style={styles.editedLabel}> (edited)</Text>
           )}
+        </Text>
           
+          {/* Edit button now only appears on patient options */}
           {message.sender === 'patient' && message.isOption && (
             <TouchableOpacity 
               style={styles.editIconButton}
@@ -181,6 +162,19 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
             </TouchableOpacity>
           )}
         </View>
+
+        {message.hoverData && (
+          <RNView style={styles.hoverImageContainer}>
+            <Image 
+              source={{ uri: message.hoverData.imgUrl }} 
+              style={styles.hoverImage} 
+              resizeMode="contain"
+            />
+            <Text style={styles.translationText}>
+              {message.hoverData.term} → {message.hoverData.english}
+            </Text>
+          </RNView>
+        )}
         
         {message.isOption && onSelect && (
           <TouchableOpacity 
@@ -199,14 +193,6 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
           </TouchableOpacity>
         )}
       </View>
-
-      {/* Medical Image Popup */}
-      {selectedMedicalTerm && (
-        <MedicalImagePopup 
-          term={selectedMedicalTerm}
-          onClose={() => setSelectedMedicalTerm(null)}
-        />
-      )}
     </View>
   );
 };
@@ -224,6 +210,13 @@ const styles = StyleSheet.create({
   patientContainer: {
     alignSelf: 'flex-end',
     marginLeft: theme.spacing.large,
+  },
+
+  transcriptionLabel: {
+    fontSize: 10,
+    color: theme.colors.textSecondary,
+    marginBottom: 4,
+    fontStyle: 'italic',
   },
   
   // Bubble pointer styling
@@ -269,23 +262,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: theme.spacing.small,
-  },
-  messageContent: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    flex: 1,
-  },
-  word: {
-    fontSize: 16,
-    color: theme.colors.text,
-  },
-  medicalTerm: {
-    color: theme.colors.primary,
-    textDecorationLine: 'underline',
-  },
-  selectedTerm: {
-    backgroundColor: theme.colors.surfaceContainer,
-    borderRadius: 4,
   },
   text: {
     fontSize: 16,
@@ -371,6 +347,27 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: theme.colors.error,
+  },
+
+  hoverImageContainer: {
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  hoverImage: {
+    width: 200,
+    height: 150,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  translationText: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginTop: 4,
+  },
+  highlightedWord: {
+    color: theme.colors.primary,
+    fontWeight: 'bold',
   },
 });
 

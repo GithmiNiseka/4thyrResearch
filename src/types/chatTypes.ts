@@ -7,6 +7,13 @@ export type Message = {
   isTranscription?: boolean;
   confidence?: number; // 0-1 scale
   timestamp: string;
+  hoverData?: HoverData | null;
+};
+
+export type HoverData = {
+  term: string;
+  english: string;
+  imgUrl: string;
 };
 
 export interface RecordingState {
@@ -40,6 +47,7 @@ export interface ChatBubbleProps {
   onSaveEdit?: () => void;
   onCancelEdit?: () => void;
   onUpdateEditText?: (text: string) => void;
+  onWordPress?: (word: string) => void; // Add this line
 }
 
 export type GeminiResponse = {

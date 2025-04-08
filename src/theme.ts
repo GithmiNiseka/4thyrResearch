@@ -20,6 +20,7 @@ interface AppColors {
   shadow: string;
   surfaceContainerLowest: string;
   [key: string]: string; // Index signature for additional colors
+  hoverImageBorder: string;
 }
 
 interface AppSpacing {
@@ -62,7 +63,8 @@ export const theme: AppTheme = {
     outline: '#aaaaaa',
     warning: '#FFA000',
     success: '#4CAF50',
-    error: '#F44336'
+    error: '#F44336',
+    hoverImageBorder: '#cccccc',
   },
   spacing: {
     small: 8,
