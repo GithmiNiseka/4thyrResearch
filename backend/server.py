@@ -39,7 +39,7 @@ consonants = {
     "ද": "d", "න": "n", "ප": "p", "බ": "b",
     "ම": "m", "ය": "y", "ර": "r", "ල": "l",
     "ව": "v", "ස": "s", "හ": "h", "ළ": "l",
-    "ෆ": "f", "ඳ": "nd"
+    "ෆ": "f", "ඳ": "nd", "ඹ": "m̆ba"
 }
 
 # Mappings for vowel diacritics that modify a consonant
