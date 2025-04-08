@@ -1,7 +1,7 @@
 // services/termService.ts
 import axios from 'axios';
 
-const GOOGLE_TRANSLATE_API_KEY = 'AIzaSyDjJEpJDySxZH5vZh-lrjLhPuxzI5nI_lk';
+const GOOGLE_TRANSLATE_API_KEY = 'API_KEY';
 
 interface WikipediaPage {
     thumbnail?: {
