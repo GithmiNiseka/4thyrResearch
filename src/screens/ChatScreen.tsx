@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Alert,
   Text,
+  Image,
 } from 'react-native';
 import { useChat } from '../hooks/useChats';
 import ChatBubble from '../components/ChatBubble';
@@ -94,7 +95,7 @@ const ChatScreen: React.FC = () => {
       } as any);
 
       const response = await axios.post<{ transcript?: string }>(
-        'http://192.168.130.17:5000/transcribe',
+        'http://192.168.1.8:5000/transcribe',
         formData,
         { 
           headers: { 
@@ -190,7 +191,10 @@ const ChatScreen: React.FC = () => {
                 style={styles.cancelRecordingButton}
                 onPress={cancelRecording}
               >
-                <Text style={styles.cancelRecordingButtonText}>Cancel</Text>
+                 <Image
+                  source={require('../../assets/images/cancel.png')}
+                  style={styles.cancelIcon}
+                />
               </TouchableOpacity>
             )}
 
@@ -201,7 +205,7 @@ const ChatScreen: React.FC = () => {
               ]}
               value={inputText}
               onChangeText={setInputText}
-              placeholder={isRecording ? "Recording..." : "Type your question..."}
+              placeholder={isRecording ? " පටිගත වෙමින් පවතී.." : "ඔබේ ප්‍රශ්නය මෙහි ටයිප් කරන්න..."}
               placeholderTextColor={theme.colors.textSecondary}
               multiline
               onSubmitEditing={handleSend}
@@ -209,26 +213,34 @@ const ChatScreen: React.FC = () => {
               editable={!isRecording}
             />
 
-            <TouchableOpacity
+        <TouchableOpacity
+          style={[
+            styles.voiceButton,
+            isRecording && styles.voiceButtonActive,
+            isTranscribing && styles.voiceButtonProcessing
+          ]}
+          onPress={isRecording ? stopRecording : startRecording}
+          disabled={isTranscribing}
+        >
+          {isTranscribing ? (
+              <ActivityIndicator color={theme.colors.primary} />
+          ) : (
+            <Image
+              source={
+                isRecording
+                  ? require('../../assets/images/done.png')
+                  : require('../../assets/images/listening.png')
+              }
               style={[
-                styles.voiceButton,
-                isRecording && styles.voiceButtonActive,
-                isTranscribing && styles.voiceButtonProcessing
+                styles.voiceIcon,
+                !isRecording && styles.doneIcon 
               ]}
-              onPress={isRecording ? stopRecording : startRecording}
-              disabled={isTranscribing}
-            >
-              {isTranscribing ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <MaterialIcons 
-                  name={isRecording ? "mic-off" : "mic"} 
-                  size={24} 
-                  color="white" 
-                />
-              )}
-            </TouchableOpacity>
+            />
+          )}
+        </TouchableOpacity>
 
+
+           
             {!isRecording && (
               <TouchableOpacity
                 style={[
@@ -239,9 +251,19 @@ const ChatScreen: React.FC = () => {
                 onPress={handleSend}
                 disabled={chatState.loading || !inputText.trim()}
               >
-                <Text style={styles.sendButtonText}>
-                  {chatState.loading ? '...' : 'Send'}
-                </Text>
+                {chatState.loading ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Image
+                    source={require('../../assets/images/send.png')}
+                    style={[
+                      styles.sendIcon,
+                      { tintColor: chatState.loading || !inputText.trim() 
+                        ? theme.colors.white 
+                        : theme.colors.primary }
+                    ]}
+                  />
+                )}
               </TouchableOpacity>
             )}
           </View>
@@ -250,6 +272,7 @@ const ChatScreen: React.FC = () => {
     </KeyboardAvoidingView>
   );
 };
+  
 
 const styles = StyleSheet.create({
   container: {
@@ -289,40 +312,72 @@ const styles = StyleSheet.create({
   sendButton: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.borderRadius.extraLarge,
-    paddingHorizontal: theme.spacing.medium,
-    paddingVertical: theme.spacing.small,
+    backgroundColor: theme.colors.white,
+    borderColor: theme.colors.primary,
+    borderWidth: 2,
+    borderRadius:50,
+    width:44,
+    height:44,
+    tintColor: theme.colors.primary,
+   /* paddingHorizontal: theme.spacing.medium,
+    paddingVertical: theme.spacing.small,*/
+    
   },
   sendButtonDisabled: {
+    justifyContent:'center',
+    alignItems:'center',
     opacity: 0.5,
     backgroundColor: theme.colors.textSecondary,
+    borderColor: theme.colors.textSecondary,
+    width:44,
+    height:44,
+    borderRadius:50,
+    tintColor: theme.colors.white,
   },
-  sendButtonText: {
-    color: theme.colors.white,
-    fontWeight: 'bold',
+  sendIcon: {
+    justifyContent:'center',
+    alignItems:'center',
+    width: 22,
+    height: 24,
+   
   },
   voiceButton: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.secondary,
+   /* backgroundColor: theme.colors.secondary,*/
     borderRadius: theme.borderRadius.extraLarge,
     width: 50,
     height: 50,
   },
   voiceButtonActive: {
-    backgroundColor: theme.colors.error,
+    /*backgroundColor: theme.colors.primary,*/
   },
   voiceButtonProcessing: {
-    backgroundColor: theme.colors.warning,
+    /*backgroundColor: theme.colors.primary,*/
   },
+  doneIcon: {
+    width: 48,
+    height: 48,
+    resizeMode: 'contain',
+  },
+  voiceIcon:{
+    width: 34,
+    height: 34,
+    resizeMode: 'contain',
+  },
+
   cancelRecordingButton: {
     justifyContent: 'center',
     paddingHorizontal: theme.spacing.small,
   },
   cancelRecordingButtonText: {
-    color: theme.colors.error,
+    color: theme.colors.primary,
     fontWeight: 'bold',
+  },
+  cancelIcon: {
+    width: 28,
+    height: 28,
+    tintColor: theme.colors.primary,
   },
 });
 
