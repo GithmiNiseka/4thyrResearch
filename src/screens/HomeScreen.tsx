@@ -8,22 +8,15 @@ import FontSize from "../../assets/constants/FontSize";
 export type RootStackParamList = {
   Home: undefined;
   Record: undefined;
-  Type: undefined;
+  TypingPage: undefined;
 };
 
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
-
-  const goToTypingPage = () => {
-    navigation.navigate("Type");
+  const goToRecordingScreen = () => {
+    navigation.navigate("Record");
   };
-
-  // Function to navigate to RecordingPage
-    const goToRecordingScreen = () => {
-      navigation.navigate("Record");
-    };
-  
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.surfaceContainerLowest }}>
@@ -34,7 +27,7 @@ export default function HomeScreen() {
             resizeMode="stretch"
             style={{ width: 32, height: 26, marginRight: 14 }}
           />
-          <Text style={{ color: Colors.shadow, fontSize: FontSize.body_small, flex: 1 }}>
+          <Text style={{ color: Colors.shadow, fontSize: FontSize.title_medium, flex: 1 }}>
             {"Signify"}
           </Text>
         </View>
@@ -50,34 +43,21 @@ export default function HomeScreen() {
 
         <View
           style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
             alignItems: "center",
             marginBottom: 18,
-            marginHorizontal: 55,
           }}
         >
           <TouchableOpacity onPress={goToRecordingScreen}>
             <Image
-              source={require("../../assets/images/recordingCircle.png")}
+              source={require("../../assets/images/type&record.png")}
               resizeMode="stretch"
-              style={{ width: 80, height: 80, marginRight: 14 }}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={goToTypingPage}>
-            <Image
-              source={require("../../assets/images/typingCircle.png")}
-              resizeMode="stretch"
-              style={{ width: 80, height: 80, marginRight: 0 }}
+              style={{ width: 120, height: 120 }}
             />
           </TouchableOpacity>
         </View>
 
         <View
           style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
             alignItems: "center",
             marginHorizontal: 60,
           }}
@@ -85,20 +65,11 @@ export default function HomeScreen() {
           <Text
             style={{
               color: Colors.shadow,
-              fontSize: FontSize.body_large,
+              fontSize:FontSize.headline_small,
               fontWeight: "bold",
             }}
           >
-            {"පටිගත කිරීම"}
-          </Text>
-          <Text
-            style={{
-              color: Colors.shadow,
-              fontSize: FontSize.body_large,
-              fontWeight: "bold",
-            }}
-          >
-            {"ටයිප් කිරීම"}
+            {"කතාකරන්න  / අහන්න "}
           </Text>
         </View>
         

@@ -25,13 +25,13 @@ export default function RecordingPage() {
                  resizeMode="stretch"
                  style={{ width: 32, height: 26, marginRight: 14 }}
                  />
-				<Text style={{ color: Colors.shadow, fontSize: FontSize.body_small, flex: 1 }}>{"Signify"}</Text>
+				<Text style={{ color: Colors.shadow, fontSize: FontSize.title_medium, flex: 1 }}>{"Signify"}</Text>
 				</View>
 
 				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center',paddingTop: 250, }} >
 				<TouchableOpacity onPress={goToChat}>
 				<Image
-                 source={require("../../assets/images/recordingCircle.png")}
+                 source={require("../../assets/images/listening.png")}
                  resizeMode="stretch"
                  style={{ width: 80, height: 80, marginRight: 14 }}
                  />
@@ -39,7 +39,7 @@ export default function RecordingPage() {
 			    </View>
 				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center',paddingTop: 20, }} >
 				<Text style={{ color: Colors.shadow, fontSize: FontSize.body_large, marginLeft: 17,fontWeight: "bold", }} >
-					{"පටිගත කිරීම ආරම්භ කිරීමට මයික්‍රෆෝනය තට්ටු කරන්න"}
+					{"සවන්දීමට මයික්‍රෆෝනය තට්ටු කරන්න"}
 				</Text>
 				</View>
 			</ScrollView>
