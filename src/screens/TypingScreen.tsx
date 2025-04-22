@@ -97,7 +97,7 @@ const TypingScreen: React.FC = () => {
       } as any);
 
       const response = await axios.post<{ transcript?: string }>(
-        'http://192.168.43.214:5000/transcribe',
+        'http://192.168.181.17:5000/transcribe',
         formData,
         { 
           headers: { 

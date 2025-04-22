@@ -26,10 +26,10 @@ CORS(app, resources={
 
 # Mappings for independent vowels
 independentVowels = {
-    "අ": "a", "ආ": "aa", "ඇ": "ae", "ඈ": "aae",
-    "ඉ": "i", "ඊ": "ii", "උ": "u", "ඌ": "uu",
-    "ඍ": "ri", "ඎ": "rii", "එ": "e", "ඒ": "ee",
-    "ඓ": "ai", "ඔ": "o", "ඕ": "oo", "ඖ": "au"
+    "අ": "a", "ආ": "ā", "ඇ": "æ", "ඈ": "ǣ",
+    "ඉ": "i", "ඊ": "ī", "උ": "ū", "ඌ": "uu",
+    "ඍ": "ṛ", "ඎ": "ṝ", "එ": "e", "ඒ": "ē",
+    "ඓ": "ai", "ඔ": "o", "ඕ": "ō", "ඖ": "au"
 }
 
 # Mappings for consonants without inherent vowels
@@ -39,15 +39,15 @@ consonants = {
     "ද": "d", "න": "n", "ප": "p", "බ": "b",
     "ම": "m", "ය": "y", "ර": "r", "ල": "l",
     "ව": "v", "ස": "s", "හ": "h", "ළ": "l",
-    "ෆ": "f", "ඳ": "nd", "ඹ": "m̆ba"
+    "ෆ": "f", "ඳ": "n̆d", "ඹ": "m̆b"
 }
 
 # Mappings for vowel diacritics that modify a consonant
 vowelDiacritics = {
-    "ා": "aa", "ැ": "ae", "ෑ": "aae",
-    "ි": "i", "ී": "ii", "ු": "u",
-    "ූ": "uu", "ෙ": "e", "ේ": "ee",
-    "ෛ": "ai", "ො": "o", "ෝ": "oo",
+    "ා": "ā", "ැ": "æ", "ෑ": "ǣ",
+    "ි": "i", "ී": "ī", "ු": "u",
+    "ූ": "ū", "ෙ": "e", "ේ": "ē",
+    "ෛ": "ai", "ො": "o", "ෝ": "ō",
     "ෞ": "au"
 }
 

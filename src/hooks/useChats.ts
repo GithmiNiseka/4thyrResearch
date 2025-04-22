@@ -15,9 +15,10 @@ export const useChat = (initialState: Partial<ChatState> = {}) => {
     editingMessageId: null,
     editText: '',
     ...initialState,
-    
   });
-  
+
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+
   const handleWordPress = async (word: string, messageId: string) => {
     try {
       const englishTerm = await translateSinhalaToEnglish(word);
@@ -39,57 +40,52 @@ export const useChat = (initialState: Partial<ChatState> = {}) => {
     } catch (error) {
       console.error('Error fetching term data:', error);
     }
-  }; 
+  };
 
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const handleSpeak = async (messageId: string, text: string) => {
+    if (chatState.speakingMessageId === messageId) {
+      setChatState(prev => ({ ...prev, audioLoading: true }));
+      try {
+        setSound(await stopSpeech(sound));
+        setChatState(prev => ({ ...prev, speakingMessageId: null }));
+      } finally {
+        setChatState(prev => ({ ...prev, audioLoading: false }));
+      }
+      return;
+    }
 
-// hooks/useChat.ts
-const handleSpeak = async (messageId: string, text: string) => {
-  // If clicking the same message that's currently speaking, stop it
-  if (chatState.speakingMessageId === messageId) {
     setChatState(prev => ({ ...prev, audioLoading: true }));
     try {
+      setChatState(prev => ({ ...prev, speakingMessageId: messageId }));
+      const newSound = await speakText(text, sound);
+      
+      if (newSound) {
+        setSound(newSound);
+        newSound.setOnPlaybackStatusUpdate((status) => {
+          if (status.isLoaded && status.didJustFinish) {
+            setChatState(prev => ({ ...prev, speakingMessageId: null }));
+          }
+        });
+      } else {
+        setChatState(prev => ({ ...prev, speakingMessageId: null }));
+        throw new Error('Failed to generate speech');
+      }
+    } catch (error) {
+      console.error('Speech playback error:', error);
       setSound(await stopSpeech(sound));
-      setChatState(prev => ({ ...prev, speakingMessageId: null }));
+      setChatState(prev => ({ 
+        ...prev, 
+        speakingMessageId: null,
+        error: error instanceof Error ? error.message : 'Speech error'
+      }));
     } finally {
       setChatState(prev => ({ ...prev, audioLoading: false }));
     }
-    return;
-  }
+  };
 
-  setChatState(prev => ({ ...prev, audioLoading: true }));
-  try {
-    setChatState(prev => ({ ...prev, speakingMessageId: messageId }));
-    const newSound = await speakText(text, sound);
-    
-    if (newSound) {
-      setSound(newSound);
-      // Set speaking to false when playback finishes
-      newSound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && status.didJustFinish) {
-          setChatState(prev => ({ ...prev, speakingMessageId: null }));
-        }
-      });
-    } else {
-      setChatState(prev => ({ ...prev, speakingMessageId: null }));
-      throw new Error('Failed to generate speech');
-    }
-  } catch (error) {
-    console.error('Speech playback error:', error);
-    setSound(await stopSpeech(sound));
-    setChatState(prev => ({ 
-      ...prev, 
-      speakingMessageId: null,
-      error: error instanceof Error ? error.message : 'Speech error'
-    }));
-  } finally {
-    setChatState(prev => ({ ...prev, audioLoading: false }));
-  }
-};
-  
   useEffect(() => {
     return () => {
-      stopSpeech(sound); // Cleanup on unmount
+      stopSpeech(sound);
     };
   }, [sound]);
 
@@ -104,10 +100,17 @@ const handleSpeak = async (messageId: string, text: string) => {
       ...prev,
       messages: [...prev.messages, newMessage],
     }));
-  
+
     if (speak && message.sender === 'patient') {
       await handleSpeak(newMessage.id, newMessage.text);
     }
+  };
+
+  const removeGeneratedOptions = () => {
+    setChatState(prev => ({
+      ...prev,
+      messages: prev.messages.filter(msg => !(msg.sender === 'patient' && msg.isOption))
+    }));
   };
 
   const generatePatientResponses = async (doctorQuestion: string) => {
@@ -141,6 +144,9 @@ const handleSpeak = async (messageId: string, text: string) => {
   const sendDoctorMessage = async (text: string) => {
     if (!text.trim()) return;
     
+    // Remove any existing patient options before adding new message
+    removeGeneratedOptions();
+    
     await addMessage({
       text,
       sender: 'doctor',
@@ -150,21 +156,22 @@ const handleSpeak = async (messageId: string, text: string) => {
   };
 
   const selectPatientResponse = async (text: string) => {
+    // Remove all options before adding the selected response
+    removeGeneratedOptions();
+    
     await addMessage({
       text,
       sender: 'patient',
       isOption: false,
-    }, true); // Speak the selected response
+    }, true);
   };
 
-  // Clean up sound when component unmounts
   const cleanupSound = async () => {
     if (sound) {
       await sound.stopAsync();
       await sound.unloadAsync();
     }
   };
-  // ... existing functions ...
 
   const startEditing = (messageId: string) => {
     const message = chatState.messages.find(m => m.id === messageId);
@@ -209,10 +216,10 @@ const handleSpeak = async (messageId: string, text: string) => {
     sendDoctorMessage,
     selectPatientResponse,
     handleSpeak,
-    startEditing,    // Make sure these are included
-    saveEditing,     // in your hook's return
-    cancelEditing,   // statement
-    updateEditText,  // (previously called updateEditing)
+    startEditing,
+    saveEditing,
+    cancelEditing,
+    updateEditText,
     cleanupSound,
     addMessage,
     handleWordPress,

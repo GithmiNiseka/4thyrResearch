@@ -94,7 +94,7 @@ const ChatScreen: React.FC = () => {
       } as any);
 
       const response = await axios.post<{ transcript?: string }>(
-        'http://192.168.130.17:5000/transcribe',
+        'http://192.168.181.17:5000/transcribe',
         formData,
         { 
           headers: { 
@@ -201,7 +201,7 @@ const ChatScreen: React.FC = () => {
               ]}
               value={inputText}
               onChangeText={setInputText}
-              placeholder={isRecording ? "Recording..." : "Type your question..."}
+              placeholder={isRecording ? "තවමත් පටිගත වෙමින් පවතී..." : "ඔබේ ප්‍රශ්නය මෙහි ටයිප් කරන්න..."}
               placeholderTextColor={theme.colors.textSecondary}
               multiline
               onSubmitEditing={handleSend}
@@ -240,7 +240,7 @@ const ChatScreen: React.FC = () => {
                 disabled={chatState.loading || !inputText.trim()}
               >
                 <Text style={styles.sendButtonText}>
-                  {chatState.loading ? '...' : 'Send'}
+                  {chatState.loading ? '...' : 'send'}
                 </Text>
               </TouchableOpacity>
             )}
