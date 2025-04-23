@@ -27,7 +27,7 @@ interface ChatBubbleProps {
   onSelect?: (text: string) => void;
   onSpeak?: (messageId: string, text: string) => void;
   onEdit?: (messageId: string) => void;
-  onWordPress?: (word: string) => void; // Add this line
+  onWordPress?: (word: string) => void;
   isSpeaking?: boolean;
   isAudioLoading?: boolean;
   isOptionLoading?: boolean;
@@ -94,56 +94,70 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
         styles.bubblePointer,
         message.sender === 'doctor' ? styles.doctorPointer : styles.patientPointer
       ]} />
-      {/* Add transcription indicator */}
-      {message.isTranscription && (
-        <Text style={styles.transcriptionLabel}>Transcription</Text>
-      )}
+      
       {/* Message content */}
       <View style={[
         styles.bubble,
         message.sender === 'doctor' ? styles.doctorBubble : styles.patientBubble
       ]}>
+        {message.isTranscription && (
+          <Text style={styles.transcriptionLabel}>Transcription</Text>
+        )}
+        
         <View style={styles.messageHeader}>
-        <Text style={styles.text}>
-          {message.text.split(' ').map((word: string, index: number) => (
-            <TouchableOpacity 
-              key={`${word}-${index}`} 
-              onPress={() => onWordPress?.(word)}
-            >
+          <Text style={[
+            message.sender === 'doctor' ? styles.doctorText : styles.patientText
+          ]}>
+            {message.text.split(' ').map((word: string, index: number) => (
+              <TouchableOpacity 
+                key={`${word}-${index}`} 
+                onPress={() => onWordPress?.(word)}
+              >
+                <Text style={[
+                  message.sender === 'doctor' ? styles.doctorText : styles.patientText,
+                  message.hoverData?.term === word && styles.highlightedWord
+                ]}>
+                  {word + ' '}
+                </Text>
+              </TouchableOpacity>
+            ))}
+            {message.isEdited && (
               <Text style={[
-                { color: theme.colors.text },
-                message.hoverData?.term === word && styles.highlightedWord
-              ]}>
-                {word + ' '}
-              </Text>
-            </TouchableOpacity>
-          ))}
-          {message.isEdited && (
-            <Text style={styles.editedLabel}> (edited)</Text>
-          )}
-        </Text>
+                styles.editedLabel,
+                message.sender === 'doctor' ? { color: 'rgba(255,255,255,0.7)' } : {}
+              ]}> (edited)</Text>
+            )}
+          </Text>
           
-          {/* Edit button now only appears on patient options */}
           {message.sender === 'patient' && message.isOption && (
             <TouchableOpacity 
-              style={styles.editIconButton}
-              onPress={() => onEdit?.(message.id)}
-            >
+            style={styles.editIconButton}
+            onPress={() => onEdit?.(message.id)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.editIconContainer}>
               <MaterialIcons 
                 name="edit" 
-                size={16} 
-                color={theme.colors.textSecondary}
+                size={18} 
+                color={theme.colors.primary}
               />
+            </View>
             </TouchableOpacity>
           )}
         </View>
         
         <View style={styles.footer}>
-          <Text style={styles.timestamp}>{message.timestamp}</Text>
+          <Text style={[
+            styles.timestamp,
+            message.sender === 'doctor' ? { color: 'rgba(255,255,255,0.7)' } : {}
+          ]}>
+            {message.timestamp}
+          </Text>
           
-          {!message.isOption && (
+          {/* Only show speaker icon for patient messages that aren't options */}
+          {message.sender === 'patient' && !message.isOption && onSpeak && (
             <TouchableOpacity 
-              onPress={() => onSpeak?.(message.id, message.text)}
+              onPress={() => onSpeak(message.id, message.text)}
               disabled={isAudioLoading}
             >
               {isAudioLoading && isSpeaking ? (
@@ -155,7 +169,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
                   color={
                     isSpeaking ? theme.colors.primary : 
                     isAudioLoading ? theme.colors.textSecondary : 
-                    theme.colors.text
+                    theme.colors.primary
                   } 
                 />
               )}
@@ -201,15 +215,16 @@ const styles = StyleSheet.create({
   // Container for the entire bubble + pointer
   bubbleContainer: {
     maxWidth: '80%',
-    marginBottom: theme.spacing.medium,
+    marginBottom: 16,
+    paddingHorizontal: 8,
   },
   doctorContainer: {
     alignSelf: 'flex-start',
-    marginRight: theme.spacing.large,
+    marginRight: 32,
   },
   patientContainer: {
     alignSelf: 'flex-end',
-    marginLeft: theme.spacing.large,
+    marginLeft: 32,
   },
 
   transcriptionLabel: {
@@ -219,28 +234,38 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   
-  // Bubble pointer styling
+  // Bubble pointer styling - more natural speech bubble shape
   bubblePointer: {
     position: 'absolute',
-    bottom: 0,
-    width: 12,
-    height: 12,
-    transform: [{ rotate: '45deg' }],
-    zIndex: -1,
+    width: 16,
+    height: 16,
+    zIndex: 1,
   },
   doctorPointer: {
-    left: -6,
-    backgroundColor: theme.colors.doctorMessage,
+    left: -8,
+    top: 12,
+    borderRightWidth: 8,
+    borderRightColor: '#254b9d',
+    borderBottomWidth: 8,
+    borderBottomColor: 'transparent',
+    borderTopWidth: 8,
+    borderTopColor: 'transparent',
   },
   patientPointer: {
-    right: -6,
-    backgroundColor: theme.colors.patientMessage,
+    right: -7,
+    top: 12,
+    borderLeftWidth: 8,
+    borderLeftColor: '#254b9d',
+    borderBottomWidth: 8,
+    borderBottomColor: 'transparent',
+    borderTopWidth: 8,
+    borderTopColor: 'transparent',
   },
   
   // Main bubble styling
   bubble: {
-    padding: theme.spacing.medium,
-    borderRadius: theme.borderRadius.large,
+    padding: 12,
+    borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -248,40 +273,60 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   doctorBubble: {
-    backgroundColor: theme.colors.doctorMessage,
-    borderTopLeftRadius: 0,
+    backgroundColor: '#254b9d',
+    borderTopLeftRadius: 4,
   },
   patientBubble: {
-    backgroundColor: theme.colors.patientMessage,
-    borderTopRightRadius: 0,
+    backgroundColor: 'white',
+    borderWidth: 2,
+    borderColor: '#254b9d',
+    borderTopRightRadius: 4,
+  },
+  
+  // Text styling
+  doctorText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  patientText: {
+    color: 'black',
+    fontWeight: 'bold',
+    fontSize: 16,
+    lineHeight: 22,
   },
   
   // Message content styling
   messageHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: theme.spacing.small,
-  },
-  text: {
-    fontSize: 16,
-    color: theme.colors.text,
-    flexShrink: 1,
+    marginBottom: 4,
+    paddingRight: 0, // Remove any padding that was for the edit icon
   },
   editedLabel: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
     fontStyle: 'italic',
   },
   editIconButton: {
-    padding: 4,
-    marginLeft: theme.spacing.small,
+    marginLeft: 8,
+  },
+  editIconContainer: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    padding: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    zIndex: 1,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: theme.spacing.small,
+    marginTop: 8,
   },
   timestamp: {
     fontSize: 12,
@@ -290,10 +335,11 @@ const styles = StyleSheet.create({
   
   // Option button styling
   optionButton: {
-    marginTop: theme.spacing.small,
-    padding: theme.spacing.small,
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     backgroundColor: theme.colors.secondary,
-    borderRadius: theme.borderRadius.medium,
+    borderRadius: 8,
     alignItems: 'center',
   },
   optionButtonDisabled: {
@@ -309,35 +355,37 @@ const styles = StyleSheet.create({
   // Editing mode styling
   editingContainer: {
     width: '90%',
-    padding: theme.spacing.medium,
-    borderRadius: theme.borderRadius.large,
-    marginBottom: theme.spacing.medium,
+    padding: 12,
+    borderRadius: 16,
+    marginBottom: 16,
   },
   doctorEditing: {
     alignSelf: 'flex-start',
-    backgroundColor: theme.colors.doctorMessage,
+    backgroundColor: '#254b9d',
   },
   patientEditing: {
     alignSelf: 'flex-end',
-    backgroundColor: theme.colors.patientMessage,
+    backgroundColor: 'white',
+    borderWidth: 2,
+    borderColor: '#254b9d',
   },
   editInput: {
     borderWidth: 1,
     borderColor: theme.colors.outline,
-    borderRadius: theme.borderRadius.small,
-    padding: theme.spacing.small,
+    borderRadius: 8,
+    padding: 8,
     minHeight: 100,
-    marginBottom: theme.spacing.small,
+    marginBottom: 8,
     backgroundColor: 'white',
   },
   editButtons: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: theme.spacing.small,
+    gap: 8,
   },
   editButton: {
-    padding: theme.spacing.small,
-    borderRadius: theme.borderRadius.small,
+    padding: 8,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     width: 40,
@@ -351,7 +399,7 @@ const styles = StyleSheet.create({
 
   hoverImageContainer: {
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 12,
   },
   hoverImage: {
     width: 200,
@@ -363,11 +411,12 @@ const styles = StyleSheet.create({
   translationText: {
     fontSize: 12,
     color: theme.colors.textSecondary,
-    marginTop: 4,
+    marginTop: 8,
   },
   highlightedWord: {
-    color: theme.colors.primary,
+    color: theme.colors.black,
     fontWeight: 'bold',
+    textDecorationLine: 'underline',
   },
 });
 

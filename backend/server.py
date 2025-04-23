@@ -21,10 +21,70 @@ CORS(app, resources={
 })
 
 # -----------------------------
-# Sinhala Transliteration Setup (for TTS)
+# Text Validation Functions
 # -----------------------------
 
-# Mappings for independent vowels
+def is_sinhala(char):
+    """Check if a single character is Sinhala"""
+    sinhala_ranges = [
+        (0x0D80, 0x0DFF),  # Basic Sinhala
+        (0x111E0, 0x111FF),  # Sinhala Archaic Numbers
+    ]
+    char_code = ord(char)
+    return any(start <= char_code <= end for start, end in sinhala_ranges)
+
+def is_valid_input(text):
+    """Check if text contains only allowed characters (Sinhala letters only)"""
+    allowed_punctuation = set(" .,!?;:-'\"()[]{}«»‹›‘'“”")
+    
+    for char in text:
+        # Skip allowed punctuation and whitespace
+        if char in allowed_punctuation or char.isspace():
+            continue
+            
+        # Check if character is Sinhala (no digits allowed)
+        if is_sinhala(char):
+            continue
+            
+        return False
+        
+    return True
+
+def get_invalid_chars(text):
+    """Identify and return invalid characters in text"""
+    invalid_chars = set()
+    for char in text:
+        if not (is_sinhala(char) or 
+               char.isdigit() or 
+               char in " .,!?;:-'\"()[]{}«»‹›‘’“”"):
+            invalid_chars.add(char)
+    return sorted(invalid_chars)
+
+# -----------------------------
+# Digit to Sinhala Conversion
+# -----------------------------
+
+digit_to_sinhala = {
+    '0': 'ශුන්ය',
+    '1': 'එක',
+    '2': 'දෙක',
+    '3': 'තුන',
+    '4': 'හතර',
+    '5': 'පහ',
+    '6': 'හය',
+    '7': 'හත',
+    '8': 'අට',
+    '9': 'නවය'
+}
+
+def convert_digits_to_sinhala(text):
+    """Convert all digits in text to their Sinhala word equivalents"""
+    return ''.join([digit_to_sinhala.get(c, c) for c in text])
+
+# -----------------------------
+# Sinhala Transliteration Setup
+# -----------------------------
+
 independentVowels = {
     "අ": "a", "ආ": "ā", "ඇ": "æ", "ඈ": "ǣ",
     "ඉ": "i", "ඊ": "ī", "උ": "ū", "ඌ": "uu",
@@ -32,7 +92,6 @@ independentVowels = {
     "ඓ": "ai", "ඔ": "o", "ඕ": "ō", "ඖ": "au"
 }
 
-# Mappings for consonants without inherent vowels
 consonants = {
     "ක": "k", "ග": "g", "ච": "ch", "ජ": "j",
     "ට": "t", "ඩ": "d", "ණ": "n", "ත": "th",
@@ -42,7 +101,6 @@ consonants = {
     "ෆ": "f", "ඳ": "n̆d", "ඹ": "m̆b"
 }
 
-# Mappings for vowel diacritics that modify a consonant
 vowelDiacritics = {
     "ා": "ā", "ැ": "æ", "ෑ": "ǣ",
     "ි": "i", "ී": "ī", "ු": "u",
@@ -51,17 +109,11 @@ vowelDiacritics = {
     "ෞ": "au"
 }
 
-# Diacritics that require an extra "a" before the mapped vowel
 diacriticsThatRequireA = {"ෙ", "ේ"}
-
-# The hal kirīma character, which suppresses the inherent vowel
 halKirima = "්"
 
 def transliterate_sinhala(text):
-    """
-    Convert Sinhala text to a Malay-phonetic transliteration.
-    """
-    # Normalize text (similar to JS .normalize('NFC'))
+    """Convert Sinhala text to Malay-phonetic transliteration."""
     text = unicodedata.normalize('NFC', text)
     result = ""
     i = 0
@@ -69,32 +121,24 @@ def transliterate_sinhala(text):
     while i < len(text):
         ch = text[i]
 
-        # If the character is an independent vowel, append its mapping.
         if ch in independentVowels:
             result += independentVowels[ch]
             i += 1
-            continue
-
-        # If the character is a consonant:
-        if ch in consonants:
-            # Check if a hal kirīma follows to indicate a consonant cluster.
+        elif ch in consonants:
             if i + 1 < len(text) and text[i + 1] == halKirima:
                 cluster = []
-                # Collect all consonants in the cluster.
                 while i < len(text) and text[i] in consonants and (i + 1 < len(text) and text[i + 1] == halKirima):
                     cluster.append(consonants[text[i]])
-                    i += 2  # Skip the consonant and the hal kirīma.
-                # Process the base consonant of the cluster.
+                    i += 2
                 if i < len(text) and text[i] in consonants:
                     base = consonants[text[i]]
                     i += 1
-                    # If a vowel diacritic follows, process it.
                     if i < len(text) and text[i] in vowelDiacritics:
                         d = text[i]
                         base += ("a" + vowelDiacritics[d]) if d in diacriticsThatRequireA else vowelDiacritics[d]
                         i += 1
                     else:
-                        base += "a"  # Append inherent vowel.
+                        base += "a"
                     result += "".join(cluster) + base
                 else:
                     result += "".join(cluster)
@@ -106,24 +150,16 @@ def transliterate_sinhala(text):
                     base += ("a" + vowelDiacritics[d]) if d in diacriticsThatRequireA else vowelDiacritics[d]
                     i += 1
                 else:
-                    base += "a"  # Append inherent vowel.
+                    base += "a"
                 result += base
-            continue
-
-        # If the character is a vowel diacritic, append its mapping.
-        if ch in vowelDiacritics:
+        elif ch in vowelDiacritics:
             result += vowelDiacritics[ch]
             i += 1
-            continue
-
-        # Skip the hal kirīma if it appears alone.
-        if ch == halKirima:
+        elif ch == halKirima:
             i += 1
-            continue
-
-        # For any other character, just append it as-is.
-        result += ch
-        i += 1
+        else:
+            result += ch
+            i += 1
 
     return result
 
@@ -136,69 +172,54 @@ def transcribe_audio():
     logger.info("Received transcription request")
     
     if 'audio' not in request.files:
-        logger.error("No audio file in request")
-        return jsonify({"error": "No audio file provided"}), 400
+        return jsonify({
+            "error": "No audio file provided",
+            "user_message": "කරුණාකර ශ්‍රව්‍ය ගොනුවක් ඇතුලත් කරන්න"
+        }), 400
     
     audio_file = request.files['audio']
     
     try:
-        # 1. First debug point - check if file is received
-        logger.debug(f"Received file: {audio_file.filename}, size: {len(audio_file.read())} bytes")
-        audio_file.seek(0)  # Reset file pointer after reading
+        # Convert audio to FLAC format
+        audio = AudioSegment.from_file(io.BytesIO(audio_file.read()))
+        audio = audio.set_frame_rate(16000).set_channels(1)
+        flac_buffer = io.BytesIO()
+        audio.export(flac_buffer, format="flac")
+        flac_content = flac_buffer.getvalue()
         
-        # 2. Try converting to FLAC
-        try:
-            audio = AudioSegment.from_file(io.BytesIO(audio_file.read()))
-            audio_file.seek(0)
-            logger.debug("Audio conversion successful")
-        except Exception as e:
-            logger.error(f"Audio conversion failed: {str(e)}")
-            return jsonify({"error": "Audio conversion failed", "details": str(e)}), 400
+        # Initialize Google Speech client
+        client = speech.SpeechClient()
         
-        # 3. Try Google Cloud Speech client initialization
-        try:
-            client = speech.SpeechClient()
-            logger.debug("Google Speech client initialized")
-        except Exception as e:
-            logger.error(f"Google client init failed: {str(e)}")
-            return jsonify({"error": "Google service unavailable", "details": str(e)}), 500
+        # Perform transcription
+        response = client.recognize(
+            config=speech.RecognitionConfig(
+                encoding=speech.RecognitionConfig.AudioEncoding.FLAC,
+                sample_rate_hertz=16000,
+                language_code="si-LK",
+            ),
+            audio=speech.RecognitionAudio(content=flac_content)
+        )
         
-        # 4. Try actual transcription
-        try:
-            audio = AudioSegment.from_file(io.BytesIO(audio_file.read()))
-            audio = audio.set_frame_rate(16000).set_channels(1)
-            flac_buffer = io.BytesIO()
-            audio.export(flac_buffer, format="flac")
-            flac_content = flac_buffer.getvalue()
-            
-            response = client.recognize(
-                config=speech.RecognitionConfig(
-                    encoding=speech.RecognitionConfig.AudioEncoding.FLAC,
-                    sample_rate_hertz=16000,
-                    language_code="si-LK",
-                ),
-                audio=speech.RecognitionAudio(content=flac_content)
-            )
-            
-            transcript = " ".join(
-                result.alternatives[0].transcript
-                for result in response.results
-                if result.alternatives
-            )
-            
-            logger.info(f"Transcription successful: {transcript[:50]}...")
-            return jsonify({
-                "transcript": transcript,
-                "isTranscription": True
-            })
-            
-        except Exception as e:
-            logger.error(f"Transcription failed: {str(e)}")
-            return jsonify({"error": "Transcription failed", "details": str(e)}), 500
-            
+        # Extract transcript
+        transcript = " ".join(
+            result.alternatives[0].transcript
+            for result in response.results
+            if result.alternatives
+        )
+        
+        logger.info(f"Transcription successful: {transcript[:50]}...")
+        return jsonify({
+            "transcript": transcript,
+            "isTranscription": True
+        })
+        
     except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")
-        return jsonify({"error": "Server error", "details": str(e)}), 500
+        logger.error(f"Transcription error: {str(e)}")
+        return jsonify({
+            "error": "Transcription failed",
+            "user_message": "කථිත පණිවිඩය හඳුනා ගැනීමට අපොහොසත් විය",
+            "details": str(e)
+        }), 500
 
 # -----------------------------
 # Text-to-Speech Endpoint
@@ -206,63 +227,96 @@ def transcribe_audio():
 
 @app.route('/speak', methods=['POST'])
 def speak():
-    """
-    Expects a JSON payload with a "text" field.
-    Transliterates the text and returns the synthesized speech (MP3).
-    """
+
+    """Convert text to speech with digits converted to Sinhala words"""
     logger.info("Received TTS request")
 
     data = request.get_json()
     if not data or 'text' not in data:
-        logger.error("No text in TTS request")
-        return jsonify({'error': 'Text is required.'}), 400
-
-    text = data['text']
-    # Convert Sinhala text to Malay phonetics
-    phonetic_text = transliterate_sinhala(text)
-    logger.info(f"Converted Phonetic Text: {phonetic_text}")
-
-    # Strict Sinhala validation
-    if re.search(r'[a-zA-Z0-9]', text):  # Blocks English letters/numbers
         return jsonify({
-            'error': 'Non-Sinhala characters detected',
-            'suggestion': 'Please use only Sinhala script (සිංහල අක්ෂර)'
+            'error': 'Text is required',
+            'user_message': 'කරුණාකර පණිවිඩයක් ඇතුලත් කරන්න'
+        }), 400
+
+    text = data['text'].strip()
+    
+    # Validate text is not empty
+    if not text:
+        return jsonify({
+            'error': 'Empty text',
+            'user_message': 'කරුණාකර හිස් පණිවිඩයක් යවන්න එපා'
         }), 400
     
+    # Validate characters
+    if not is_valid_input(text):
+        invalid_chars = get_invalid_chars(text)
+        return jsonify({
+            'error': 'Invalid characters detected',
+            'user_message': 'කරුණාකර වලංගු අකුරු පමණක් භාවිතා කරන්න',
+            'invalid_characters': invalid_chars,
+            'suggestion': f'අවලංගු අකුරු: {", ".join(invalid_chars)}'
+        }), 400
+
     try:
-        # Initialize the Google Cloud TTS client
+        # Convert digits to Sinhala words
+        text_with_sinhala_digits = convert_digits_to_sinhala(text)
+        
+        # Transliterate the entire text (now with digits converted to Sinhala words)
+        phonetic_text = transliterate_sinhala(text_with_sinhala_digits)
+        
+        # Initialize TTS client
         client = texttospeech.TextToSpeechClient()
 
-        synthesis_input = texttospeech.SynthesisInput(text=phonetic_text)
+        # Configure Malay voice for Sinhala
         voice = texttospeech.VoiceSelectionParams(
             language_code='ms-MY',
             name='ms-MY-Standard-A'
         )
+
+        # Configure audio output
+        synthesis_input = texttospeech.SynthesisInput(text=phonetic_text)
         audio_config = texttospeech.AudioConfig(
             audio_encoding=texttospeech.AudioEncoding.MP3,
             speaking_rate=0.9
         )
 
-        # Perform the text-to-speech request
+        # Generate speech
         response = client.synthesize_speech(
             input=synthesis_input,
             voice=voice,
             audio_config=audio_config
         )
 
-        # Return the MP3 audio with the appropriate header
         return Response(response.audio_content, mimetype='audio/mpeg')
+        
     except Exception as e:
         logger.error(f"TTS Error: {str(e)}")
-        return jsonify({'error': 'Failed to generate speech.'}), 500
+        return jsonify({
+            'error': 'Failed to generate speech',
+            'user_message': 'කථිත පණිවිඩය ජනනය කිරීමට අපොහොසත් විය',
+            'details': str(e)
+        }), 500
+
+# -----------------------------
+# Health Check Endpoint
+# -----------------------------
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({
+        "status": "healthy",
+        "services": {
+            "speech_to_text": "available",
+            "text_to_speech": "available"
+        }
+    })
 
 # -----------------------------
 # Main Application
 # -----------------------------
 
 if __name__ == '__main__':
-    # Verify credentials
     if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
-        logger.error("GOOGLE_APPLICATION_CREDENTIALS not set")
+        logger.warning("GOOGLE_APPLICATION_CREDENTIALS environment variable not set")
     
     app.run(host='0.0.0.0', port=5000, debug=True)

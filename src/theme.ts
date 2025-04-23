@@ -46,13 +46,13 @@ export interface AppTheme {
 
 export const theme: AppTheme = {
   colors: {
-    primary: '#128C7E',
-    secondary: '#34B7F1',
+    primary: '#254b9d',
+    secondary: '#254b9d',
     background: '#f5f5f5',
     surface: '#ffffff',
-    doctorMessage: '#dcf8c6',
+    doctorMessage: '#254b9d',
     patientMessage: '#ffffff',
-    text: '#000000',
+    text: '#00000',
     textSecondary: '#666666',
     white: '#ffffff',
     black: '#000000',

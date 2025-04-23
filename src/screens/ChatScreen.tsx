@@ -33,27 +33,73 @@ const ChatScreen: React.FC = () => {
     cancelEditing,
     updateEditText,
     cleanupSound,
-    handleWordPress // Add this destructuring
+    handleWordPress
   } = useChat();
 
   const [inputText, setInputText] = useState('');
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
-  const handleSend = () => {
+  // Check if text contains only Sinhala characters, digits, and allowed punctuation
+  const isValidSinhalaText = (text: string) => {
+    // Sinhala Unicode ranges: U+0D80 to U+0DFF
+    const sinhalaRegex = /^[\u0D80-\u0DFF 0-9.,!?;:'"()\[\]{}«»‹›‘’“”\-]*$/;
+    return sinhalaRegex.test(text);
+  };
+
+  const validateInput = (text: string) => {
+    if (!isValidSinhalaText(text)) {
+      setErrorMessage('කරුණාකර සිංහල අකුරු, ඉලක්කම් හෝ විරාම සංකේත පමණක් භාවිතා කරන්න');
+    } else {
+      setErrorMessage('');
+    }
+    setInputText(text);
+  };
+
+  const handleSend = async () => {
     if (!inputText.trim()) return;
     
-    // Add as patient message (right side)
-    addMessage({
-      text: inputText,
-      sender: 'patient',
-      isOption: false
-    }, true); // true = speak this message
-    
-    setInputText('');
+    try {
+      // Final validation before sending
+      if (!isValidSinhalaText(inputText)) {
+        setErrorMessage('කරුණාකර සිංහල අකුරු, ඉලක්කම් හෝ විරාම සංකේත පමණක් භාවිතා කරන්න');
+        return;
+      }
+
+      setErrorMessage('');
+      
+      await addMessage({
+        text: inputText,
+        sender: 'patient',
+        isOption: false
+      }, true);
+      
+      setInputText('');
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 400 && error.response?.data?.user_message) {
+          setErrorMessage(error.response.data.user_message);
+        } else {
+          setErrorMessage('පණිවිඩය යැවීමේදී දෝෂයක් ඇතිවිය. කරුණාකර නැවත උත්සාහ කරන්න');
+        }
+      } else {
+        setErrorMessage('පණිවිඩය යැවීමේදී දෝෂයක් ඇතිවිය');
+      }
+      console.error('Message sending error:', error);
+    }
   };
+
+  useEffect(() => {
+    if (errorMessage) {
+      const timer = setTimeout(() => {
+        setErrorMessage('');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [errorMessage]);
 
   const startRecording = async () => {
     try {
@@ -68,9 +114,10 @@ const ChatScreen: React.FC = () => {
       );
       setRecording(recording);
       setIsRecording(true);
+      setErrorMessage(''); // Clear errors when starting recording
     } catch (err) {
       console.error('Failed to start recording', err);
-      Alert.alert('Error', 'Failed to start recording');
+      setErrorMessage('පටිගත කිරීම ආරම්භ කිරීමට නොහැකි විය');
     }
   };
 
@@ -80,6 +127,7 @@ const ChatScreen: React.FC = () => {
     
     try {
       setIsTranscribing(true);
+      setErrorMessage(''); // Clear errors before transcription
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
 
@@ -95,7 +143,7 @@ const ChatScreen: React.FC = () => {
       } as any);
 
       const response = await axios.post<{ transcript?: string }>(
-        'http://192.168.1.8:5000/transcribe',
+        'http://192.168.181.17:5000/transcribe',
         formData,
         { 
           headers: { 
@@ -107,7 +155,6 @@ const ChatScreen: React.FC = () => {
       );
 
       if (response.data.transcript) {
-        // Send directly as a doctor message
         await sendDoctorMessage(response.data.transcript);
       } else {
         throw new Error('No transcript received');
@@ -115,10 +162,7 @@ const ChatScreen: React.FC = () => {
       
     } catch (error) {
       console.error('Transcription error:', error);
-      Alert.alert(
-        'Transcription Failed', 
-        'Could not transcribe your voice message. Please try again.'
-      );
+      setErrorMessage('සවන් දීමේ දෝෂයක් ඇතිවිය. කරුණාකර නැවත උත්සාහ කරන්න');
     } finally {
       setIsTranscribing(false);
       setRecording(null);
@@ -131,6 +175,7 @@ const ChatScreen: React.FC = () => {
       await recording.stopAndUnloadAsync();
       setRecording(null);
     }
+    setErrorMessage(''); // Clear errors when cancelling
   };
 
   useEffect(() => {
@@ -162,7 +207,17 @@ const ChatScreen: React.FC = () => {
               <ChatBubble
                 message={item}
                 onSelect={item.isOption ? selectPatientResponse : undefined}
-                onSpeak={handleSpeak}
+                onSpeak={async (messageId, text) => {
+                  try {
+                    await handleSpeak(messageId, text);
+                  } catch (error) {
+                    if (axios.isAxiosError(error) && error.response?.status === 400) {
+                      setErrorMessage('කථිත පණිවිඩය ජනනය කිරීමට නොහැකි විය: සිංහල අකුරු පමණක් භාවිතා කරන්න');
+                    } else {
+                      setErrorMessage('කථිත පණිවිඩය ජනනය කිරීමේ දෝෂයක් ඇතිවිය');
+                    }
+                  }
+                }}
                 onEdit={startEditing}
                 isSpeaking={chatState.speakingMessageId === item.id}
                 isAudioLoading={
@@ -175,8 +230,8 @@ const ChatScreen: React.FC = () => {
                 onSaveEdit={saveEditing}
                 onCancelEdit={cancelEditing}
                 onUpdateEditText={updateEditText}
-                onWordPress={(word) => handleWordPress(word, item.id)} // Make sure this is passed
-                />
+                onWordPress={(word) => handleWordPress(word, item.id)}
+              />
             )}
             contentContainerStyle={styles.messagesContainer}
             keyboardShouldPersistTaps="handled"
@@ -185,13 +240,21 @@ const ChatScreen: React.FC = () => {
             }
           />
 
+          {errorMessage && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>
+                {errorMessage}
+              </Text>
+            </View>
+          )}
+
           <View style={styles.inputContainer}>
             {isRecording && (
               <TouchableOpacity
                 style={styles.cancelRecordingButton}
                 onPress={cancelRecording}
               >
-                 <Image
+                <Image
                   source={require('../../assets/images/cancel.png')}
                   style={styles.cancelIcon}
                 />
@@ -201,10 +264,11 @@ const ChatScreen: React.FC = () => {
             <TextInput
               style={[
                 styles.input,
-                isRecording && styles.inputDuringRecording
+                isRecording && styles.inputDuringRecording,
+                errorMessage ? styles.inputError : {}
               ]}
               value={inputText}
-              onChangeText={setInputText}
+              onChangeText={validateInput}
               placeholder={isRecording ? "තවමත් පටිගත වෙමින් පවතී..." : "ඔබේ ප්‍රශ්නය මෙහි ටයිප් කරන්න..."}
               placeholderTextColor={theme.colors.textSecondary}
               multiline
@@ -213,43 +277,41 @@ const ChatScreen: React.FC = () => {
               editable={!isRecording}
             />
 
-        <TouchableOpacity
-          style={[
-            styles.voiceButton,
-            isRecording && styles.voiceButtonActive,
-            isTranscribing && styles.voiceButtonProcessing
-          ]}
-          onPress={isRecording ? stopRecording : startRecording}
-          disabled={isTranscribing}
-        >
-          {isTranscribing ? (
-              <ActivityIndicator color={theme.colors.primary} />
-          ) : (
-            <Image
-              source={
-                isRecording
-                  ? require('../../assets/images/done.png')
-                  : require('../../assets/images/listening.png')
-              }
+            <TouchableOpacity
               style={[
-                styles.voiceIcon,
-                !isRecording && styles.doneIcon 
+                styles.voiceButton,
+                isRecording && styles.voiceButtonActive,
+                isTranscribing && styles.voiceButtonProcessing
               ]}
-            />
-          )}
-        </TouchableOpacity>
+              onPress={isRecording ? stopRecording : startRecording}
+              disabled={isTranscribing}
+            >
+              {isTranscribing ? (
+                  <ActivityIndicator color={theme.colors.primary} />
+              ) : (
+                <Image
+                  source={
+                    isRecording
+                      ? require('../../assets/images/done.png')
+                      : require('../../assets/images/listening.png')
+                  }
+                  style={[
+                    styles.voiceIcon,
+                    !isRecording && styles.doneIcon 
+                  ]}
+                />
+              )}
+            </TouchableOpacity>
 
-
-           
             {!isRecording && (
               <TouchableOpacity
                 style={[
                   styles.sendButton,
-                  (chatState.loading || !inputText.trim()) &&
+                  (chatState.loading || !inputText.trim() || !!errorMessage) &&
                     styles.sendButtonDisabled,
                 ]}
                 onPress={handleSend}
-                disabled={chatState.loading || !inputText.trim()}
+                disabled={chatState.loading || !inputText.trim() || !!errorMessage}
               >
                 {chatState.loading ? (
                   <ActivityIndicator color="white" />
@@ -258,9 +320,11 @@ const ChatScreen: React.FC = () => {
                     source={require('../../assets/images/send.png')}
                     style={[
                       styles.sendIcon,
-                      { tintColor: chatState.loading || !inputText.trim() 
-                        ? theme.colors.white 
-                        : theme.colors.primary }
+                      { 
+                        tintColor: chatState.loading || !inputText.trim() || !!errorMessage
+                          ? theme.colors.white 
+                          : theme.colors.primary 
+                      }
                     ]}
                   />
                 )}
@@ -272,7 +336,6 @@ const ChatScreen: React.FC = () => {
     </KeyboardAvoidingView>
   );
 };
-  
 
 const styles = StyleSheet.create({
   container: {
@@ -309,76 +372,81 @@ const styles = StyleSheet.create({
   inputDuringRecording: {
     backgroundColor: theme.colors.surfaceContainer,
   },
+  inputError: {
+    borderColor: theme.colors.error,
+  },
   sendButton: {
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: theme.colors.white,
     borderColor: theme.colors.primary,
     borderWidth: 2,
-    borderRadius:50,
-    width:44,
-    height:44,
-    tintColor: theme.colors.primary,
-   /* paddingHorizontal: theme.spacing.medium,
-    paddingVertical: theme.spacing.small,*/
-    
+    borderRadius: 50,
+    width: 44,
+    height: 44,
   },
   sendButtonDisabled: {
-    justifyContent:'center',
-    alignItems:'center',
     opacity: 0.5,
     backgroundColor: theme.colors.textSecondary,
     borderColor: theme.colors.textSecondary,
-    width:44,
-    height:44,
-    borderRadius:50,
-    tintColor: theme.colors.white,
   },
   sendIcon: {
-    justifyContent:'center',
-    alignItems:'center',
     width: 22,
     height: 24,
-   
   },
   voiceButton: {
     justifyContent: 'center',
     alignItems: 'center',
-   /* backgroundColor: theme.colors.secondary,*/
     borderRadius: theme.borderRadius.extraLarge,
     width: 50,
     height: 50,
   },
-  voiceButtonActive: {
-    /*backgroundColor: theme.colors.primary,*/
-  },
-  voiceButtonProcessing: {
-    /*backgroundColor: theme.colors.primary,*/
-  },
+  voiceButtonActive: {},
+  voiceButtonProcessing: {},
   doneIcon: {
     width: 48,
     height: 48,
     resizeMode: 'contain',
   },
-  voiceIcon:{
+  voiceIcon: {
     width: 34,
     height: 34,
     resizeMode: 'contain',
   },
-
   cancelRecordingButton: {
     justifyContent: 'center',
     paddingHorizontal: theme.spacing.small,
-  },
-  cancelRecordingButtonText: {
-    color: theme.colors.primary,
-    fontWeight: 'bold',
   },
   cancelIcon: {
     width: 28,
     height: 28,
     tintColor: theme.colors.primary,
   },
+  errorContainer: {
+    backgroundColor: '#FFF4F4', // soft red-tinted background
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginHorizontal: theme.spacing.medium,
+    marginBottom: theme.spacing.medium,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.error,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2, // Android shadow
+  },
+  
+  errorText: {
+    color: '#B00020', // friendly but noticeable red
+    fontSize: 15,
+    lineHeight: 20,
+    textAlign: 'left',
+  },
+  
+  
+  
 });
 
 export default ChatScreen;
