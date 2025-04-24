@@ -293,7 +293,7 @@ const ChatScreen: React.FC = () => {
                   source={
                     isRecording
                       ? require('../../assets/images/done.png')
-                      : require('../../assets/images/listening.png')
+                      : require('../../assets/images/recordingCircle.png')
                   }
                   style={[
                     styles.voiceIcon,
