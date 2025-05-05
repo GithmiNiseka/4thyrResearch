@@ -9,13 +9,14 @@ export type RootStackParamList = {
   Home: undefined;
   Record: undefined;
   TypingPage: undefined;
+  Chat: undefined;
 };
 
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
-  const goToRecordingScreen = () => {
-    navigation.navigate("Record");
+  const goToChat = () => {
+    navigation.navigate("Chat");
   };
 
   return (
@@ -47,7 +48,7 @@ export default function HomeScreen() {
             marginBottom: 18,
           }}
         >
-          <TouchableOpacity onPress={goToRecordingScreen}>
+          <TouchableOpacity onPress={goToChat}>
             <Image
               source={require("../../assets/images/type&record.png")}
               resizeMode="stretch"
