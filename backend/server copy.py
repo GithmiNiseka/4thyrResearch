@@ -1,17 +1,14 @@
+from flask import Flask, request, jsonify, Response
+from flask_cors import CORS
+from google.cloud import speech_v1p1beta1 as speech
+from google.cloud import texttospeech
 import os
+from pydub import AudioSegment
 import io
 import tempfile
 import logging
 import unicodedata
 import re
-from flask import Flask, request, jsonify, Response
-from flask_cors import CORS
-from google.cloud import speech_v1p1beta1 as speech
-from google.cloud import texttospeech
-from pydub import AudioSegment
-
-# Set the GOOGLE_APPLICATION_CREDENTIALS environment variable to the local key file
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.path.join(os.path.dirname(__file__), "deaf-app-key.json")
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -319,6 +316,7 @@ def health_check():
 # -----------------------------
 
 if __name__ == '__main__':
-    logger.info(f"Using key: {os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')}")
+    if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+        logger.warning("GOOGLE_APPLICATION_CREDENTIALS environment variable not set")
     
     app.run(host='0.0.0.0', port=5000, debug=True)

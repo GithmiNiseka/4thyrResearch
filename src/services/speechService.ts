@@ -5,7 +5,7 @@ import { Audio, AVPlaybackStatus } from "expo-av";
 import { encode } from "base64-arraybuffer";
 
 // Use the same IP as your transcription endpoint
-const SERVER_URL = "http://192.168.181.17:5000/speak";
+const SERVER_URL = "http://192.168.155.17:5000/speak";
 
 export const speakText = async (text: string, currentSound: Audio.Sound | null): Promise<Audio.Sound | null> => {
   if (!text.trim()) return currentSound;
